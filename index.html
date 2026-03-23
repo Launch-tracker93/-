@@ -236,13 +236,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .chip:hover.lv-chip{border-color:var(–leave);color:var(–leave);}
 
 /* ── Modal action buttons ── */
-.mbtns{display:grid;gap:10px;margin-top:6px;}
-.m2{grid-template-columns:1fr 1fr;}.m3{grid-template-columns:1fr 1fr 1fr;}
+.mbtns{display:flex;gap:10px;margin-top:6px;}
+.mbtns .mbtn{flex:1;}
 .mbtn{padding:14px;border-radius:12px;border:none;font-family:‘Noto Sans KR’,sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;}
 .mbtn:hover{filter:brightness(1.1);}
 .mb-cancel{background:var(–surface2);color:var(–text2);}
 .mb-save{background:var(–accent);color:#fff;}
-.mb-del{background:rgba(255,101,132,.15);color:var(–red);}
+.mb-del{background:rgba(255,77,109,.15);color:var(–red);}
 
 /* ── Leave info box ── */
 .lv-infobox{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);border-radius:10px;padding:12px 14px;margin-bottom:4px;}
@@ -420,9 +420,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
   <!-- Buttons -->
 
-  <div class="mbtns m2" id="mBtns">
+  <div class="mbtns" id="mBtns">
+    <button class="mbtn mb-del" id="mBtnDel" onclick="modalDelete()" style="display:none">삭제</button>
     <button class="mbtn mb-cancel" onclick="closeModal()">취소</button>
-    <button class="mbtn mb-save"   onclick="saveModal()">저장</button>
+    <button class="mbtn mb-save" onclick="saveModal()">저장</button>
   </div>
 </div>
 </div>
@@ -721,32 +722,23 @@ function openModal(editKey){
 
   // Reset chips & fields
   const initType=isEdit?((S.records[mEditKey]&&S.records[mEditKey].leaveType)||'work'):'work';
-  selType(initType, /*init=*/true);
+  selType(initType);
 
   if(isEdit){
     const r=S.records[mEditKey];
     if(r&&!r.isLeave){
-      if(r.checkIn){const ci=new Date(r.checkIn);document.getElementById('mIn').value=`${pad(ci.getHours())}:${pad(ci.getMinutes())}`;}
+      if(r.checkIn){const ci=new Date(r.checkIn);document.getElementById('mIn').value=pad(ci.getHours())+':'+pad(ci.getMinutes());}
       else document.getElementById('mIn').value='';
-      if(r.checkOut){const co=new Date(r.checkOut);document.getElementById('mOut').value=`${pad(co.getHours())}:${pad(co.getMinutes())}`;}
+      if(r.checkOut){const co=new Date(r.checkOut);document.getElementById('mOut').value=pad(co.getHours())+':'+pad(co.getMinutes());}
       else document.getElementById('mOut').value='';
-      // compute back to net for display hint
       document.getElementById('mNet').value='';
     }
-    // Buttons: 취소 / 삭제 / 저장 (3-col)
-    document.getElementById('mBtns').className='mbtns m3';
-    document.getElementById('mBtns').innerHTML=`
-      <button class="mbtn mb-cancel" onclick="closeModal()">취소</button>
-      <button class="mbtn mb-del"    onclick="modalDelete()">삭제</button>
-      <button class="mbtn mb-save"   onclick="saveModal()">저장</button>`;
+    document.getElementById('mBtnDel').style.display='';
   } else {
     document.getElementById('mIn').value='';
     document.getElementById('mOut').value='';
     document.getElementById('mNet').value='';
-    document.getElementById('mBtns').className='mbtns m2';
-    document.getElementById('mBtns').innerHTML=`
-      <button class="mbtn mb-cancel" onclick="closeModal()">취소</button>
-      <button class="mbtn mb-save"   onclick="saveModal()">저장</button>`;
+    document.getElementById('mBtnDel').style.display='none';
   }
 }
 
