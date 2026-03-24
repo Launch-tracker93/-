@@ -372,7 +372,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
     <!-- 엑셀 내보내기 -->
     <div class="brow b1" style="margin-bottom:14px;">
-      <button class="btn" style="background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);color:var(--green);font-size:13px;padding:12px;" onclick="exportXLSX()">📊 <span id="exportBtnLabel">이번 달</span> 엑셀 내보내기</button>
+      <button class="btn" style="background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);color:var(--green);font-size:13px;padding:12px;" onclick="exportXLSX()">📊 <span id="exportBtnLabel">이번 달</span> CSV 내보내기</button>
     </div>
     <!-- 월 요약 미니 -->
     <div id="histMiniSummary"></div>
@@ -973,32 +973,30 @@ function exportXLSX(){
     return '<Row>'+xlsCell(ym)+xlsCell(m.days,true)+xlsCell(parseFloat(m.netH.toFixed(2)),true)+xlsCell(parseFloat(m.otH.toFixed(2)),true)+xlsCell(m.lv,true)+'</Row>';
   }).join('');
 
-  var xml =
-    '<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?>'+
-    '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'+
-    '<Styles><Style ss:ID="H"><Interior ss:Color="#5b52f0" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF" ss:Bold="1"/></Style></Styles>'+
-    '<Worksheet ss:Name="근무기록"><Table>'+
-      '<Column ss:Width="90"/><Column ss:Width="80"/><Column ss:Width="70"/><Column ss:Width="70"/><Column ss:Width="90"/><Column ss:Width="90"/><Column ss:Width="70"/>'+
-      '<Row>'+['날짜','근무유형','출근시간','퇴근시간','순근무(시간)','초과근무(시간)','비고'].map(xlsHCell).join('')+'</Row>'+
-      dataRows+
-    '</Table></Worksheet>'+
-    '<Worksheet ss:Name="월별요약"><Table>'+
-      '<Column ss:Width="80"/><Column ss:Width="70"/><Column ss:Width="90"/><Column ss:Width="90"/><Column ss:Width="70"/>'+
-      '<Row>'+['월','근무일수','총근무(시간)','총초과(시간)','휴가일수'].map(xlsHCell).join('')+'</Row>'+
-      summaryRows+
-    '</Table></Worksheet>'+
-    '</Workbook>';
+  var csv = '\uFEFF'; // BOM (한글 깨짐 방지)
+  csv += '날짜,근무유형,출근시간,퇴근시간,순근무(시간),초과근무(시간),비고\n';
+  filtered.forEach(function(e){
+    var date=e[0], r=e[1];
+    var cfg  = LCFG[r.leaveType||'work'];
+    var inT  = r.checkIn  ? fts(r.checkIn)  : '';
+    var outT = r.checkOut ? fts(r.checkOut) : '';
+    var netH = (r.netSec/3600).toFixed(2);
+    var otH  = (Math.max(0,r.netSec-TARGET)/3600).toFixed(2);
+    var type = (cfg&&cfg.label)||'일반 근무';
+    var note = r.isLeave ? type : '';
+    csv += [date,type,inT,outT,netH,otH,note].join(',') + '\n';
+  });
 
-  var blob = new Blob([xml], {type:'application/vnd.ms-excel;charset=utf-8'});
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
   a.href     = url;
-  a.download = filename;
+  a.download = filename.replace('.xls','.csv');
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
-  toast('📊 '+label+' 다운로드 완료! (파일 앱 확인)');
+  toast('📊 '+label+' CSV 다운로드 완료!');
 }
 
 function exportCSVShare(filtered, label){
