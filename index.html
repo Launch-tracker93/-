@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6,6 +7,7 @@
 <title>근무 타이머</title>
 
 <!-- iOS PWA -->
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="근무타이머">
@@ -13,6 +15,7 @@
 <meta name="theme-color" content="#f4f5f7">
 
 <!-- 앱 아이콘 (SVG → canvas로 인라인 생성) -->
+
 <link rel="apple-touch-icon" id="appIcon">
 
 <script>
@@ -81,191 +84,193 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 /* ── Header ── */
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
-.htitle{font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--text2);}
-.hdate{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);}
+.htitle{font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(–text2);}
+.hdate{font-family:‘DM Mono’,monospace;font-size:12px;color:var(–text3);}
 
 /* ── Status badge ── */
 .sbadge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;}
 .sdot{width:6px;height:6px;border-radius:50%;}
-.s-off{background:rgba(255,255,255,.05);color:var(--text2);}.s-off .sdot{background:var(--text3);}
-.s-work{background:rgba(67,233,123,.12);color:var(--green);}.s-work .sdot{background:var(--green);animation:blink 1.8s infinite;}
-.s-leave{background:rgba(167,139,250,.15);color:var(--leave);}.s-leave .sdot{background:var(--leave);}
-.s-done{background:rgba(108,99,255,.15);color:var(--accent);}.s-done .sdot{background:var(--accent);}
+.s-off{background:rgba(255,255,255,.05);color:var(–text2);}.s-off .sdot{background:var(–text3);}
+.s-work{background:rgba(67,233,123,.12);color:var(–green);}.s-work .sdot{background:var(–green);animation:blink 1.8s infinite;}
+.s-leave{background:rgba(167,139,250,.15);color:var(–leave);}.s-leave .sdot{background:var(–leave);}
+.s-done{background:rgba(108,99,255,.15);color:var(–accent);}.s-done .sdot{background:var(–accent);}
 @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.65)}}
 
 /* ── Tabs ── */
-.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:16px;gap:4px;}
-.tab{flex:1;padding:8px 4px;border-radius:10px;border:none;background:transparent;color:var(--text2);font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
-.tab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.tabs{display:flex;background:var(–surface);border:1px solid var(–border);border-radius:14px;padding:4px;margin-bottom:16px;gap:4px;}
+.tab{flex:1;padding:8px 4px;border-radius:10px;border:none;background:transparent;color:var(–text2);font-family:‘Noto Sans KR’,sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.tab.active{background:var(–surface2);color:var(–text);border:1px solid var(–border);}
 .tab-content{display:none;}.tab-content.active{display:block;}
 
 /* ── Timer card ── */
-.tcard{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px 24px 22px;margin-bottom:14px;position:relative;overflow:hidden;}
-.tcard::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity .3s;}
+.tcard{background:var(–surface);border:1px solid var(–border);border-radius:20px;padding:28px 24px 22px;margin-bottom:14px;position:relative;overflow:hidden;}
+.tcard::after{content:’’;position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(–accent),var(–accent2));opacity:0;transition:opacity .3s;}
 .tcard.active::after{opacity:1;}
-.tlabel{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;}
-.tdisp{font-family:'DM Mono',monospace;font-size:54px;font-weight:500;letter-spacing:-2px;line-height:1;margin-bottom:4px;transition:color .3s;color:var(--text);}
-.tdisp.working{color:var(--green);}.tdisp.overtime{color:var(--accent2);}
-.tsub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:18px;}
-.psec{display:flex;align-items:center;gap:20px;padding-top:18px;border-top:1px solid var(--border);}
+.tlabel{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(–text3);margin-bottom:6px;}
+.tdisp{font-family:‘DM Mono’,monospace;font-size:54px;font-weight:500;letter-spacing:-2px;line-height:1;margin-bottom:4px;transition:color .3s;color:var(–text);}
+.tdisp.working{color:var(–green);}.tdisp.overtime{color:var(–accent2);}
+.tsub{font-size:11px;color:var(–text3);font-family:‘DM Mono’,monospace;margin-bottom:18px;}
+.psec{display:flex;align-items:center;gap:20px;padding-top:18px;border-top:1px solid var(–border);}
 .ring-wrap{position:relative;width:68px;height:68px;flex-shrink:0;}
 .rsvg{transform:rotate(-90deg);width:68px;height:68px;}
-.rbg{fill:none;stroke:var(--border);stroke-width:5;}
-.rfill{fill:none;stroke:var(--green);stroke-width:5;stroke-linecap:round;stroke-dasharray:175.9;stroke-dashoffset:175.9;transition:stroke-dashoffset .9s ease,stroke .3s;}
-.rpct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;}
+.rbg{fill:none;stroke:var(–border);stroke-width:5;}
+.rfill{fill:none;stroke:var(–green);stroke-width:5;stroke-linecap:round;stroke-dasharray:175.9;stroke-dashoffset:175.9;transition:stroke-dashoffset .9s ease,stroke .3s;}
+.rpct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:‘DM Mono’,monospace;font-size:13px;font-weight:500;}
 .pinfo{flex:1;}
 .prow{display:flex;justify-content:space-between;align-items:center;padding:3px 0;}
-.pkey{font-size:11px;color:var(--text2);}
-.pval{font-family:'DM Mono',monospace;font-size:12px;color:var(--text);}
-.pval.ot{color:var(--accent2);}.pval.ok{color:var(--green);}
+.pkey{font-size:11px;color:var(–text2);}
+.pval{font-family:‘DM Mono’,monospace;font-size:12px;color:var(–text);}
+.pval.ot{color:var(–accent2);}.pval.ok{color:var(–green);}
 
 /* ── OT banner ── */
 .otb{display:none;align-items:center;gap:12px;background:rgba(255,101,132,.08);border:1px solid rgba(255,101,132,.28);border-radius:14px;padding:14px 16px;margin-bottom:14px;}
 .otb.show{display:flex;}
 .otb-icon{font-size:22px;}
-.otb-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);}
-.otb-val{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--red);}
+.otb-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(–red);}
+.otb-val{font-family:‘DM Mono’,monospace;font-size:26px;font-weight:500;color:var(–red);}
 
 /* ── Leave done card ── */
 .leave-done{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:20px;padding:28px 24px;margin-bottom:14px;text-align:center;}
 .ld-icon{font-size:44px;margin-bottom:10px;}
-.ld-type{font-size:22px;font-weight:700;color:var(--leave);margin-bottom:4px;}
-.ld-sub{font-size:12px;color:var(--text2);}
+.ld-type{font-size:22px;font-weight:700;color:var(–leave);margin-bottom:4px;}
+.ld-sub{font-size:12px;color:var(–text2);}
 
 /* ── Info grid ── */
 .igrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.icell{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 14px 12px;}
-.iclbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;}
-.icval{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;}
-.cv-g{color:var(--green);}.cv-r{color:var(--red);}.cv-y{color:var(--yellow);}.cv-a{color:var(--accent);}
+.icell{background:var(–surface);border:1px solid var(–border);border-radius:14px;padding:14px 14px 12px;}
+.iclbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(–text3);margin-bottom:4px;}
+.icval{font-family:‘DM Mono’,monospace;font-size:20px;font-weight:500;}
+.cv-g{color:var(–green);}.cv-r{color:var(–red);}.cv-y{color:var(–yellow);}.cv-a{color:var(–accent);}
 
 /* ── Lunch note ── */
-.lnote{display:flex;align-items:center;gap:8px;background:rgba(249,202,36,.06);border:1px solid rgba(249,202,36,.18);border-radius:10px;padding:9px 14px;margin-bottom:14px;font-size:12px;color:var(--yellow);}
+.lnote{display:flex;align-items:center;gap:8px;background:rgba(249,202,36,.06);border:1px solid rgba(249,202,36,.18);border-radius:10px;padding:9px 14px;margin-bottom:14px;font-size:12px;color:var(–yellow);}
 
 /* ── Buttons ── */
 .brow{display:grid;gap:10px;margin-bottom:14px;}.b1{grid-template-columns:1fr;}.b2{grid-template-columns:1fr 1fr;}
-.btn{padding:16px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:-.02em;}
+.btn{padding:16px;border-radius:14px;border:1px solid var(–border);background:var(–surface2);color:var(–text);font-family:‘Noto Sans KR’,sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:-.02em;}
 .btn:hover{transform:translateY(-1px);filter:brightness(1.15);}
 .btn:active{transform:translateY(0);}
 .btn:disabled{opacity:.3;cursor:not-allowed;transform:none;filter:none;}
-.btn-in{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 8px 24px rgba(108,99,255,.3);}
-.btn-out{background:rgba(255,101,132,.12);border-color:rgba(255,101,132,.32);color:var(--red);}
+.btn-in{background:var(–accent);border-color:var(–accent);color:#fff;box-shadow:0 8px 24px rgba(108,99,255,.3);}
+.btn-out{background:rgba(255,101,132,.12);border-color:rgba(255,101,132,.32);color:var(–red);}
 .btn-ghost{opacity:.3;cursor:default;}
-.btn-add{background:rgba(108,99,255,.1);border-color:rgba(108,99,255,.3);color:var(--accent);font-size:13px;padding:12px;}
+.btn-add{background:rgba(108,99,255,.1);border-color:rgba(108,99,255,.3);color:var(–accent);font-size:13px;padding:12px;}
 
 /* ── Calendar ── */
 .cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.cnav{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:15px;transition:all .15s;}
-.cnav:hover{color:var(--text);border-color:var(--accent);}
+.cnav{background:var(–surface2);border:1px solid var(–border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(–text2);font-size:15px;transition:all .15s;}
+.cnav:hover{color:var(–text);border-color:var(–accent);}
 .ctitle{font-size:15px;font-weight:700;}
 .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-.cdow{text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:4px 0 8px;}
-.cday{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--text2);gap:2px;}
-.cday.has{cursor:pointer;}.cday.has:hover{background:var(--surface2);color:var(--text);}
-.cday.today{background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-weight:700;}
+.cdow{text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(–text3);padding:4px 0 8px;}
+.cday{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(–text2);gap:2px;}
+.cday.has{cursor:pointer;}.cday.has:hover{background:var(–surface2);color:var(–text);}
+.cday.today{background:var(–surface2);border:1px solid var(–accent);color:var(–accent);font-weight:700;}
 .cday.dim{opacity:.2;}
-.cdot{width:5px;height:5px;border-radius:50%;background:var(--green);}
-.cdot.ot{background:var(--accent2);}.cdot.inc{background:var(--yellow);}.cdot.lv{background:var(--leave);}
-.clegend{display:flex;gap:12px;justify-content:center;margin-top:12px;font-size:10px;color:var(--text3);}
+.cdot{width:5px;height:5px;border-radius:50%;background:var(–green);}
+.cdot.ot{background:var(–accent2);}.cdot.inc{background:var(–yellow);}.cdot.lv{background:var(–leave);}
+.clegend{display:flex;gap:12px;justify-content:center;margin-top:12px;font-size:10px;color:var(–text3);}
 .clegend span{display:flex;align-items:center;gap:4px;}
 .ldot{width:6px;height:6px;border-radius:50%;display:inline-block;}
 
 /* ── Month cards ── */
-.mcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
-.mcard-title{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
-.mrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);}
+.mcard{background:var(–surface);border:1px solid var(–border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.mcard-title{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(–text3);margin-bottom:12px;}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(–border);}
 .mrow:last-child{border-bottom:none;}
-.mkey{font-size:12px;color:var(--text2);}
-.mval{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);}
-.gbar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.mkey{font-size:12px;color:var(–text2);}
+.mval{font-family:‘DM Mono’,monospace;font-size:13px;font-weight:500;color:var(–text);}
+.gbar-wrap{background:var(–surface);border:1px solid var(–border);border-radius:14px;padding:16px;margin-bottom:14px;}
 .gbar-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.gbar-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);}
-.gbar-pct{font-family:'DM Mono',monospace;font-size:13px;color:var(--text);}
-.gbar-track{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;margin-bottom:6px;}
-.gbar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .6s ease;}
-.gbar-sub{font-size:11px;color:var(--text3);text-align:right;}
+.gbar-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(–text3);}
+.gbar-pct{font-family:‘DM Mono’,monospace;font-size:13px;color:var(–text);}
+.gbar-track{height:8px;border-radius:4px;background:var(–surface2);overflow:hidden;margin-bottom:6px;}
+.gbar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(–accent),var(–green));transition:width .6s ease;}
+.gbar-sub{font-size:11px;color:var(–text3);text-align:right;}
 
 /* ── History list ── */
 .hlist{display:flex;flex-direction:column;gap:8px;}
-.hitem{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:border-color .15s;}
+.hitem{background:var(–surface);border:1px solid var(–border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:border-color .15s;}
 .hitem:hover{border-color:rgba(108,99,255,.4);}
-.hdate{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);min-width:44px;}
+.hdate{font-family:‘DM Mono’,monospace;font-size:12px;color:var(–text2);min-width:44px;}
 .hinfo{flex:1;}
-.htimes{font-size:11px;color:var(--text2);margin-bottom:2px;}
-.htimes b{color:var(--text);font-weight:600;}
-.hdur{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--text);}
-.hot-txt{font-size:11px;color:var(--red);}
+.htimes{font-size:11px;color:var(–text2);margin-bottom:2px;}
+.htimes b{color:var(–text);font-weight:600;}
+.hdur{font-family:‘DM Mono’,monospace;font-size:15px;font-weight:500;color:var(–text);}
+.hot-txt{font-size:11px;color:var(–red);}
 .hact-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .htag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.04em;}
-.t-ot{background:rgba(255,101,132,.12);color:var(--red);}
-.t-ok{background:rgba(67,233,123,.1);color:var(--green);}
-.t-inc{background:rgba(249,202,36,.1);color:var(--yellow);}
-.t-lv{background:rgba(167,139,250,.12);color:var(--leave);}
-.hact{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
-.hact:hover{color:var(--text);border-color:var(--accent);}
-.hact.del:hover{color:var(--red);border-color:var(--red);}
-.empty{text-align:center;padding:48px 20px;color:var(--text3);font-size:13px;}
+.t-ot{background:rgba(255,101,132,.12);color:var(–red);}
+.t-ok{background:rgba(67,233,123,.1);color:var(–green);}
+.t-inc{background:rgba(249,202,36,.1);color:var(–yellow);}
+.t-lv{background:rgba(167,139,250,.12);color:var(–leave);}
+.hact{width:30px;height:30px;border-radius:8px;border:1px solid var(–border);background:var(–surface2);color:var(–text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.hact:hover{color:var(–text);border-color:var(–accent);}
+.hact.del:hover{color:var(–red);border-color:var(–red);}
+.empty{text-align:center;padding:48px 20px;color:var(–text3);font-size:13px;}
 .empty-icon{font-size:36px;margin-bottom:10px;}
 
 /* ── Modal ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:flex-end;justify-content:center;padding:0;}
 .overlay.show{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px calc(36px + env(safe-area-inset-bottom));position:relative;max-height:90vh;overflow-y:auto;}
+.modal{background:var(–surface);border:1px solid var(–border);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px calc(36px + env(safe-area-inset-bottom));position:relative;max-height:90vh;overflow-y:auto;}
 .modal-title{font-size:15px;font-weight:700;margin-bottom:20px;}
-.mclose{position:absolute;top:20px;right:20px;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
-.mclose:hover{color:var(--text);}
+.mclose{position:absolute;top:20px;right:20px;width:28px;height:28px;border-radius:8px;border:1px solid var(–border);background:var(–surface2);color:var(–text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
+.mclose:hover{color:var(–text);}
 
 /* ── Form fields ── */
 .field{margin-bottom:16px;}
-.flabel{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:7px;}
+.flabel{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(–text3);margin-bottom:7px;}
 .frow{display:grid;gap:10px;}.fr2{grid-template-columns:1fr 1fr;}
-.finput{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:14px;outline:none;transition:border-color .15s;}
-.finput:focus{border-color:var(--accent);}
-.finput::placeholder{color:var(--text3);}
+.finput{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(–border);background:var(–surface2);color:var(–text);font-family:‘DM Mono’,monospace;font-size:14px;outline:none;transition:border-color .15s;}
+.finput:focus{border-color:var(–accent);}
+.finput::placeholder{color:var(–text3);}
 .finput:disabled{opacity:.35;cursor:not-allowed;}
 
 /* ── Type chips ── */
 .chips{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:4px;}
-.chip{padding:10px 2px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;line-height:1.4;}
-.chip:hover{border-color:var(--accent);color:var(--accent);}
-.chip.sel{background:rgba(108,99,255,.15);border-color:var(--accent);color:var(--accent);}
-.chip.lv-sel{background:rgba(167,139,250,.15);border-color:var(--leave);color:var(--leave);}
-.chip:hover.lv-chip{border-color:var(--leave);color:var(--leave);}
+.chip{padding:10px 2px;border-radius:10px;border:1px solid var(–border);background:var(–surface2);color:var(–text2);font-family:‘Noto Sans KR’,sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;line-height:1.4;}
+.chip:hover{border-color:var(–accent);color:var(–accent);}
+.chip.sel{background:rgba(108,99,255,.15);border-color:var(–accent);color:var(–accent);}
+.chip.lv-sel{background:rgba(167,139,250,.15);border-color:var(–leave);color:var(–leave);}
+.chip:hover.lv-chip{border-color:var(–leave);color:var(–leave);}
 
 /* ── Modal action buttons ── */
 .mbtns{display:flex;gap:10px;margin-top:6px;}
 .mbtns .mbtn{flex:1;}
-.mbtn{padding:14px;border-radius:12px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;}
+.mbtn{padding:14px;border-radius:12px;border:none;font-family:‘Noto Sans KR’,sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;}
 .mbtn:hover{filter:brightness(1.1);}
-.mb-cancel{background:var(--surface2);color:var(--text2);}
-.mb-save{background:var(--accent);color:#fff;}
-.mb-del{background:rgba(255,77,109,.15);color:var(--red);}
+.mb-cancel{background:var(–surface2);color:var(–text2);}
+.mb-save{background:var(–accent);color:#fff;}
+.mb-del{background:rgba(255,77,109,.15);color:var(–red);}
 
 /* ── Leave info box ── */
 .lv-infobox{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);border-radius:10px;padding:12px 14px;margin-bottom:4px;}
 .lv-infobox-row{display:flex;justify-content:space-between;align-items:center;}
-.lv-infobox-key{font-size:12px;color:var(--text2);}
-.lv-infobox-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--leave);}
+.lv-infobox-key{font-size:12px;color:var(–text2);}
+.lv-infobox-val{font-family:‘DM Mono’,monospace;font-size:14px;font-weight:500;color:var(–leave);}
 
 /* ── iOS 홈 화면 추가 안내 ── */
-.pwa-banner{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:800;background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:12px 16px 12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:340px;width:calc(100% - 32px);}
-.pwa-banner-text{flex:1;font-size:12px;color:var(--text2);line-height:1.5;}
-.pwa-banner-text b{color:var(--text);display:block;margin-bottom:2px;}
-.pwa-banner-close{width:24px;height:24px;border-radius:6px;border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.pwa-banner{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:800;background:var(–surface2);border:1px solid var(–border);border-radius:16px;padding:12px 16px 12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:340px;width:calc(100% - 32px);}
+.pwa-banner-text{flex:1;font-size:12px;color:var(–text2);line-height:1.5;}
+.pwa-banner-text b{color:var(–text);display:block;margin-bottom:2px;}
+.pwa-banner-close{width:24px;height:24px;border-radius:6px;border:none;background:transparent;color:var(–text3);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .pwa-arrow{font-size:20px;flex-shrink:0;}
 .twrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
-.toast{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tin .22s ease,tout .3s ease 1.8s forwards;}
+.toast{background:var(–surface2);border:1px solid var(–border);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;color:var(–text);white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tin .22s ease,tout .3s ease 1.8s forwards;}
 @keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes tout{to{opacity:0;transform:translateY(-4px)}}
 
 /* ── Section label ── */
-.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(–text3);margin-bottom:8px;}
 </style>
+
 </head>
 <body>
 <div class="app">
 
   <!-- Header -->
+
   <div class="header">
     <div class="htitle">⏱ 근무 타이머</div>
     <div class="hdate" id="hdrDate"></div>
@@ -280,58 +285,62 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
 
   <!-- ══════════════════ TODAY TAB ══════════════════ -->
+
   <div id="tab-today" class="tab-content active">
 
-    <!-- Lunch note -->
-    <div class="lnote" id="lunchNote">🍱 점심시간 <strong style="margin:0 4px">1시간</strong>은 자동으로 차감됩니다</div>
+```
+<!-- Lunch note -->
+<div class="lnote" id="lunchNote">🍱 점심시간 <strong style="margin:0 4px">1시간</strong>은 자동으로 차감됩니다</div>
 
-    <!-- Leave done display -->
-    <div id="leaveDone" style="display:none"></div>
+<!-- Leave done display -->
+<div id="leaveDone" style="display:none"></div>
 
-    <!-- Timer card -->
-    <div class="tcard" id="tcardEl" style="display:none">
-      <div class="tlabel" id="tlabel">순 근무시간 (점심 1시간 제외)</div>
-      <div class="tdisp" id="tdisp">00:00:00</div>
-      <div class="tsub"  id="tsub">출근하지 않았습니다</div>
-      <div class="psec">
-        <div class="ring-wrap">
-          <svg class="rsvg" viewBox="0 0 68 68">
-            <circle class="rbg"   cx="34" cy="34" r="28"/>
-            <circle class="rfill" id="rfill" cx="34" cy="34" r="28"/>
-          </svg>
-          <div class="rpct" id="rpct">0%</div>
-        </div>
-        <div class="pinfo">
-          <div class="prow"><div class="pkey">목표</div>    <div class="pval">08:00:00</div></div>
-          <div class="prow"><div class="pkey">총 경과</div> <div class="pval" id="pEl">—</div></div>
-          <div class="prow"><div class="pkey">남은시간</div> <div class="pval" id="pRem">—</div></div>
-          <div class="prow"><div class="pkey">초과근무</div> <div class="pval ot" id="pOT">—</div></div>
-        </div>
-      </div>
+<!-- Timer card -->
+<div class="tcard" id="tcardEl" style="display:none">
+  <div class="tlabel" id="tlabel">순 근무시간 (점심 1시간 제외)</div>
+  <div class="tdisp" id="tdisp">00:00:00</div>
+  <div class="tsub"  id="tsub">출근하지 않았습니다</div>
+  <div class="psec">
+    <div class="ring-wrap">
+      <svg class="rsvg" viewBox="0 0 68 68">
+        <circle class="rbg"   cx="34" cy="34" r="28"/>
+        <circle class="rfill" id="rfill" cx="34" cy="34" r="28"/>
+      </svg>
+      <div class="rpct" id="rpct">0%</div>
     </div>
-
-    <!-- OT banner -->
-    <div class="otb" id="otb">
-      <div class="otb-icon">🔥</div>
-      <div><div class="otb-lbl">초과 근무 중</div><div class="otb-val" id="otbval">00:00:00</div></div>
+    <div class="pinfo">
+      <div class="prow"><div class="pkey">목표</div>    <div class="pval">08:00:00</div></div>
+      <div class="prow"><div class="pkey">총 경과</div> <div class="pval" id="pEl">—</div></div>
+      <div class="prow"><div class="pkey">남은시간</div> <div class="pval" id="pRem">—</div></div>
+      <div class="prow"><div class="pkey">초과근무</div> <div class="pval ot" id="pOT">—</div></div>
     </div>
+  </div>
+</div>
 
-    <!-- Info grid (shown while working or done-work) -->
-    <div class="igrid" id="infoGrid" style="display:none">
-      <div class="icell"><div class="iclbl">출근시간</div><div class="icval cv-g" id="iIn">—</div></div>
-      <div class="icell"><div class="iclbl">퇴근시간</div><div class="icval cv-r" id="iOut">—</div></div>
-      <div class="icell"><div class="iclbl">점심 차감</div><div class="icval cv-y">01:00:00</div></div>
-      <div class="icell"><div class="iclbl">순 근무</div><div class="icval cv-a" id="iNet">—</div></div>
-    </div>
+<!-- OT banner -->
+<div class="otb" id="otb">
+  <div class="otb-icon">🔥</div>
+  <div><div class="otb-lbl">초과 근무 중</div><div class="otb-val" id="otbval">00:00:00</div></div>
+</div>
 
-    <!-- Action buttons -->
-    <div id="bIn"   class="brow b1"><button class="btn btn-in"  onclick="doIn()">🟢 출근하기</button></div>
-    <div id="bOut"  class="brow b1" style="display:none"><button class="btn btn-out" onclick="doOut()">🔴 퇴근하기</button></div>
-    <div id="bDone" class="brow b1" style="display:none"><button class="btn btn-ghost" disabled>완료</button></div>
+<!-- Info grid (shown while working or done-work) -->
+<div class="igrid" id="infoGrid" style="display:none">
+  <div class="icell"><div class="iclbl">출근시간</div><div class="icval cv-g" id="iIn">—</div></div>
+  <div class="icell"><div class="iclbl">퇴근시간</div><div class="icval cv-r" id="iOut">—</div></div>
+  <div class="icell"><div class="iclbl">점심 차감</div><div class="icval cv-y">01:00:00</div></div>
+  <div class="icell"><div class="iclbl">순 근무</div><div class="icval cv-a" id="iNet">—</div></div>
+</div>
+
+<!-- Action buttons -->
+<div id="bIn"   class="brow b1"><button class="btn btn-in"  onclick="doIn()">🟢 출근하기</button></div>
+<div id="bOut"  class="brow b1" style="display:none"><button class="btn btn-out" onclick="doOut()">🔴 퇴근하기</button></div>
+<div id="bDone" class="brow b1" style="display:none"><button class="btn btn-ghost" disabled>완료</button></div>
+```
 
   </div><!-- /today -->
 
   <!-- ══════════════════ CALENDAR TAB ══════════════════ -->
+
   <div id="tab-calendar" class="tab-content">
     <div class="gbar-wrap" id="gbarWrap"></div>
     <div class="mcard" id="mcard"></div>
@@ -350,28 +359,54 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div><!-- /calendar -->
 
   <!-- ══════════════════ HISTORY TAB ══════════════════ -->
+
   <div id="tab-history" class="tab-content">
-    <div class="brow b1" style="margin-bottom:16px;">
+    <div class="brow b1" style="margin-bottom:10px;">
       <button class="btn btn-add" onclick="openModal(null)">＋ 기록 추가 / 휴가 등록</button>
     </div>
+    <!-- 월 필터 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <button class="cnav" onclick="histMonthMove(-1)">‹</button>
+      <div style="flex:1;text-align:center;font-size:14px;font-weight:700;cursor:pointer;" id="histMonthTitle" onclick="toggleMonthPicker()"></div>
+      <button class="cnav" onclick="histMonthMove(1)">›</button>
+      <button class="cnav" onclick="histMonthAll()" id="histAllBtn" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">전체</button>
+    </div>
+    <!-- 년/월 피커 -->
+    <div id="monthPicker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <button class="cnav" onclick="pickerYearMove(-1)">‹</button>
+        <div style="font-size:15px;font-weight:700;" id="pickerYearTitle"></div>
+        <button class="cnav" onclick="pickerYearMove(1)">›</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;" id="pickerMonthGrid"></div>
+    </div>
+    <!-- 엑셀 내보내기 -->
+    <div class="brow b1" style="margin-bottom:14px;">
+      <button class="btn" style="background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);color:var(--green);font-size:13px;padding:12px;" onclick="exportXLSX()">📊 <span id="exportBtnLabel">이번 달</span> 엑셀 내보내기</button>
+    </div>
+    <!-- 월 요약 미니 -->
+    <div id="histMiniSummary"></div>
     <div id="hlist" class="hlist"></div>
   </div><!-- /history -->
 
 </div><!-- /app -->
 
 <!-- ══════════════════ MODAL ══════════════════ -->
+
 <div class="overlay" id="overlay" onclick="overlayClick(event)">
 <div class="modal">
   <div class="modal-title" id="mTitle">기록 추가</div>
   <button class="mclose" onclick="closeModal()">✕</button>
 
   <!-- Date -->
+
   <div class="field">
     <div class="flabel">날짜</div>
     <input type="date" class="finput" id="mDate">
   </div>
 
   <!-- Type chips -->
+
   <div class="field">
     <div class="flabel">근무 유형</div>
     <div class="chips">
@@ -384,11 +419,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
 
   <!-- Leave info box -->
+
   <div id="mLeaveInfo" style="display:none" class="field">
     <div class="lv-infobox" id="mLeaveInfoBox"></div>
   </div>
 
   <!-- Work fields -->
+
   <div id="mWorkFields">
     <div class="field">
       <div class="flabel">출근 시간 / 퇴근 시간</div>
@@ -404,6 +441,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
 
   <!-- Buttons -->
+
   <div class="mbtns" id="mBtns">
     <button class="mbtn mb-del" id="mBtnDel" onclick="modalDelete()" style="display:none">삭제</button>
     <button class="mbtn mb-cancel" onclick="closeModal()">취소</button>
@@ -415,6 +453,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div class="twrap" id="twrap"></div>
 
 <!-- iOS 홈 화면 추가 안내 배너 -->
+
 <div class="pwa-banner" id="pwaBanner" style="display:none">
   <div class="pwa-arrow">📲</div>
   <div class="pwa-banner-text">
@@ -444,6 +483,7 @@ const LCFG = {
 // ─────────────────────────────────────────────────────────
 let S = (()=>{ try{return JSON.parse(localStorage.getItem(KEY))||blank();}catch{return blank();} })();
 let ticker=null, calY, calM, mCurType='work', mEditKey=null;
+let histY=null, histM=null; // null = 전체보기
 
 function blank(){ return {status:'off',checkIn:null,checkOut:null,leaveType:'work',records:{}}; }
 function save(){ localStorage.setItem(KEY,JSON.stringify(S)); }
@@ -503,7 +543,8 @@ function stopTick(){ clearInterval(ticker); ticker=null; }
 function tick(){ if(S.status!=='working'){stopTick();return;} updateTimerUI(calcNet(S.checkIn,null,'work')); }
 
 function updateTimerUI(n){
-  const raw   = S.checkIn ? Math.floor((Date.now()-S.checkIn)/1000) : 0;
+  const endTs = S.checkOut || Date.now();
+  const raw   = S.checkIn ? Math.floor((endTs-S.checkIn)/1000) : 0;
   const isOT  = n>=TARGET;
   const ot    = Math.max(0,n-TARGET);
   const alive = S.status==='working';
@@ -619,7 +660,7 @@ function renderCal(){
     <div class="mcard-title">${calM+1}월 요약</div>
     <div class="mrow"><div class="mkey">근무일수</div><div class="mval">${wd}일</div></div>
     <div class="mrow"><div class="mkey">총 근무시간</div><div class="mval">${hm(tn)}</div></div>
-    <div class="mrow"><div class="mkey">초과근무일</div><div class="mval" style="color:var(--red)">${otD}일${otS>0?' (+'+hm(otS)+')':''}</div></div>
+    <div class="mrow"><div class="mkey">총 초과근무</div><div class="mval" style="color:var(--red)">${otS>0?hm(otS):'—'}</div></div>
     <div class="mrow"><div class="mkey">미달근무일</div><div class="mval" style="color:var(--yellow)">${incD}일</div></div>
     <div class="mrow"><div class="mkey">휴가일수</div><div class="mval" style="color:var(--leave)">${lvD}일</div></div>`;
 
@@ -651,10 +692,65 @@ function calMove(d){ calM+=d; if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY
 //  HISTORY
 // ─────────────────────────────────────────────────────────
 function renderHist(){
-  const wrap=document.getElementById('hlist');
-  const entries=Object.entries(S.records).sort(([a],[b])=>b.localeCompare(a));
-  if(!entries.length){wrap.innerHTML=`<div class="empty"><div class="empty-icon">📋</div>아직 근무 기록이 없습니다<br><span style="font-size:11px;margin-top:6px;display:block">위 버튼으로 기록을 추가하거나 오늘 탭에서 출근해 보세요</span></div>`;return;}
-  wrap.innerHTML=entries.map(([date,r])=>{
+  const now = new Date();
+  if(histY===null && histM===null){ histY=now.getFullYear(); histM=now.getMonth(); }
+
+  const titleEl = document.getElementById('histMonthTitle');
+  const allBtn  = document.getElementById('histAllBtn');
+  const isAll   = (histY==='all');
+
+  // 내보내기 버튼 라벨 업데이트
+  var exportLabel = document.getElementById('exportBtnLabel');
+  if(exportLabel) exportLabel.textContent = isAll ? '전체' : histY+'년 '+(histM+1)+'월';
+
+  if(isAll){
+    titleEl.textContent='전체 기록 ▾';
+    allBtn.style.background='rgba(91,82,240,.15)';
+    allBtn.style.color='var(--accent)';
+    allBtn.style.borderColor='var(--accent)';
+  } else {
+    titleEl.textContent=histY+'년 '+(histM+1)+'월 ▾';
+    allBtn.style.background='';
+    allBtn.style.color='';
+    allBtn.style.borderColor='';
+  }
+
+  const wrap = document.getElementById('hlist');
+  let allEntries = Object.entries(S.records).sort(([a],[b])=>b.localeCompare(a));
+  const filtered = isAll ? allEntries : allEntries.filter(([date])=>{
+    const[y,m]=date.split('-').map(Number);
+    return y===histY && m===(histM+1);
+  });
+
+  // 미니 요약 (전체보기가 아닐 때)
+  const summEl = document.getElementById('histMiniSummary');
+  if(!isAll && filtered.length>0){
+    const recs = filtered.map(([,v])=>v);
+    const tn  = recs.reduce((a,r)=>a+r.netSec,0);
+    const otS = recs.reduce((a,r)=>a+Math.max(0,r.netSec-TARGET),0);
+    const lvD = recs.filter(r=>r.isLeave).length;
+    summEl.innerHTML='<div style="display:flex;gap:8px;margin-bottom:12px;">'+
+      '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
+        '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">총근무</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;">'+hm(tn)+'</div>'+
+      '</div>'+
+      '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
+        '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">초과</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:var(--red);">'+( otS>0?hm(otS):'—')+'</div>'+
+      '</div>'+
+      '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
+        '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">휴가</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:var(--leave);">'+lvD+'일</div>'+
+      '</div>'+
+    '</div>';
+  } else { summEl.innerHTML=''; }
+
+  if(!filtered.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-icon">📋</div>'+(isAll?'아직 근무 기록이 없습니다':( histM+1)+'월 기록이 없습니다')+'</div>';
+    return;
+  }
+
+  wrap.innerHTML=filtered.map(([date,r])=>{
     const[,m,d]=date.split('-');
     const lv=r.isLeave, cfg=LCFG[r.leaveType||'work'];
     const ot=Math.max(0,r.netSec-TARGET);
@@ -666,19 +762,72 @@ function renderHist(){
     const timeRow=lv
       ?((cfg&&cfg.icon)||'')+" "+((cfg&&cfg.label)||'휴가')+" · 근무시간 "+hm(r.netSec)+" 인정"
       :"출근 <b>"+fts(r.checkIn)+"</b> · 퇴근 <b>"+fts(r.checkOut)+"</b>";
-    return `<div class="hitem" id="hr-${date}">
-      <div class="hdate">${m}/${d}</div>
-      <div class="hinfo">
-        <div class="htimes">${timeRow}</div>
-        <div class="hdur">${hms(r.netSec)}${(!lv&&ot>0)?` <span class="hot-txt">+${hm(ot)}</span>`:''}</div>
-      </div>
-      <div class="hact-wrap">
-        <div class="htag ${tc}">${tt}</div>
-        <button class="hact" onclick="openModal('${date}')" title="수정">✏️</button>
-        <button class="hact del" onclick="delRecord('${date}')" title="삭제">🗑</button>
-      </div>
-    </div>`;
+    return '<div class="hitem" id="hr-'+date+'">'+
+      '<div class="hdate">'+m+'/'+d+'</div>'+
+      '<div class="hinfo">'+
+        '<div class="htimes">'+timeRow+'</div>'+
+        '<div class="hdur">'+hms(r.netSec)+( (!lv&&ot>0)?'<span class="hot-txt"> +'+hm(ot)+'</span>':'')+'</div>'+
+      '</div>'+
+      '<div class="hact-wrap">'+
+        '<div class="htag '+tc+'">'+tt+'</div>'+
+        '<button class="hact" onclick="openModal(\''+date+'\')" title="수정">✏️</button>'+
+        '<button class="hact del" onclick="delRecord(\''+date+'\')" title="삭제">🗑</button>'+
+      '</div>'+
+    '</div>';
   }).join('');
+}
+
+function histMonthMove(dir){
+  if(histY==='all'){ histY=new Date().getFullYear(); histM=new Date().getMonth(); return renderHist(); }
+  histM+=dir;
+  if(histM>11){histM=0;histY++;}
+  if(histM<0){histM=11;histY--;}
+  document.getElementById('monthPicker').style.display='none';
+  renderHist();
+}
+
+function histMonthAll(){
+  histY='all'; histM=null;
+  document.getElementById('monthPicker').style.display='none';
+  renderHist();
+}
+
+var pickerTempY = null;
+function toggleMonthPicker(){
+  var picker = document.getElementById('monthPicker');
+  if(picker.style.display==='none'){
+    pickerTempY = (histY==='all'||histY===null) ? new Date().getFullYear() : histY;
+    renderPicker();
+    picker.style.display='';
+  } else {
+    picker.style.display='none';
+  }
+}
+
+function renderPicker(){
+  document.getElementById('pickerYearTitle').textContent = pickerTempY+'년';
+  var grid = document.getElementById('pickerMonthGrid');
+  var months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  grid.innerHTML = months.map(function(m, i){
+    var isActive = !!(histY!=='all' && histY===pickerTempY && histM===i);
+    return '<button onclick="selectPickerMonth('+i+')" style="'+
+      'padding:8px 2px;border-radius:8px;border:1px solid '+(isActive?'var(--accent)':'var(--border)')+';'+
+      'background:'+(isActive?'rgba(91,82,240,.15)':'var(--surface2)')+';'+
+      'color:'+(isActive?'var(--accent)':'var(--text2)')+';'+
+      'font-family:\'Noto Sans KR\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">'+m+'</button>';
+  }).join('');
+}
+
+function pickerYearMove(dir){
+  pickerTempY += dir;
+  renderPicker();
+}
+
+function selectPickerMonth(m){
+  histY = pickerTempY;
+  histM = m;
+  document.getElementById('monthPicker').style.display='none';
+  renderHist();
 }
 
 function delRecord(key){
@@ -789,66 +938,177 @@ function saveModal(){
   if(document.getElementById('tab-calendar').classList.contains('active'))renderCal();
 }
 
+// ─────────────────────────────────────────────────────────
+//  EXPORT
+// ─────────────────────────────────────────────────────────
+function xlsEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function xlsCell(v, isNum){
+  if(isNum) return '<Cell><Data ss:Type="Number">'+v+'</Data></Cell>';
+  return '<Cell><Data ss:Type="String">'+xlsEsc(v)+'</Data></Cell>';
+}
+function xlsHCell(v){
+  return '<Cell ss:StyleID="H"><Data ss:Type="String">'+xlsEsc(v)+'</Data></Cell>';
+}
+
+function exportXLSX(){
+  var isAll = (histY==='all' || histY===null);
+  var allEntries = Object.entries(S.records).sort(function(a,b){ return a[0].localeCompare(b[0]); });
+  var filtered = isAll ? allEntries : allEntries.filter(function(e){
+    var parts = e[0].split('-').map(Number);
+    return parts[0]===histY && parts[1]===(histM+1);
+  });
+  if(!filtered.length){ toast('내보낼 기록이 없습니다'); return; }
+
+  var label    = isAll ? '전체' : histY+'년_'+(histM+1)+'월';
+  var filename = '근무기록_'+label+'.xls';
+
+  // 데이터 행 생성
+  var dataRows = filtered.map(function(e){
+    var date=e[0], r=e[1];
+    var cfg  = LCFG[r.leaveType||'work'];
+    var inT  = r.checkIn  ? fts(r.checkIn)  : '';
+    var outT = r.checkOut ? fts(r.checkOut) : '';
+    var netH = parseFloat((r.netSec/3600).toFixed(2));
+    var otH  = parseFloat((Math.max(0,r.netSec-TARGET)/3600).toFixed(2));
+    var type = (cfg&&cfg.label)||'일반 근무';
+    var note = r.isLeave ? type : '';
+    return '<Row>'+xlsCell(date)+xlsCell(type)+xlsCell(inT)+xlsCell(outT)+xlsCell(netH,true)+xlsCell(otH,true)+xlsCell(note)+'</Row>';
+  }).join('');
+
+  // 월별 요약
+  var months = {};
+  filtered.forEach(function(e){
+    var ym=e[0].slice(0,7), r=e[1];
+    if(!months[ym]) months[ym]={days:0,netH:0,otH:0,lv:0};
+    months[ym].days++;
+    months[ym].netH += r.netSec/3600;
+    months[ym].otH  += Math.max(0,r.netSec-TARGET)/3600;
+    if(r.isLeave) months[ym].lv++;
+  });
+  var summaryRows = Object.entries(months).map(function(e){
+    var ym=e[0], m=e[1];
+    return '<Row>'+xlsCell(ym)+xlsCell(m.days,true)+xlsCell(parseFloat(m.netH.toFixed(2)),true)+xlsCell(parseFloat(m.otH.toFixed(2)),true)+xlsCell(m.lv,true)+'</Row>';
+  }).join('');
+
+  var xml =
+    '<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?>'+
+    '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'+
+    '<Styles><Style ss:ID="H"><Interior ss:Color="#5b52f0" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF" ss:Bold="1"/></Style></Styles>'+
+
+```
+'<Worksheet ss:Name="근무기록"><Table>'+
+  '<Column ss:Width="90"/><Column ss:Width="80"/><Column ss:Width="70"/><Column ss:Width="70"/><Column ss:Width="90"/><Column ss:Width="90"/><Column ss:Width="70"/>'+
+  '<Row>'+['날짜','근무유형','출근시간','퇴근시간','순근무(시간)','초과근무(시간)','비고'].map(xlsHCell).join('')+'</Row>'+
+  dataRows+
+'</Table></Worksheet>'+
+'<Worksheet ss:Name="월별요약"><Table>'+
+  '<Column ss:Width="80"/><Column ss:Width="70"/><Column ss:Width="90"/><Column ss:Width="90"/><Column ss:Width="70"/>'+
+  '<Row>'+['월','근무일수','총근무(시간)','총초과(시간)','휴가일수'].map(xlsHCell).join('')+'</Row>'+
+  summaryRows+
+'</Table></Worksheet>'+
+'</Workbook>';
+```
+
+var blob = new Blob([xml], {type:‘application/vnd.ms-excel;charset=utf-8’});
+var url  = URL.createObjectURL(blob);
+var a    = document.createElement(‘a’);
+a.href     = url;
+a.download = filename;
+a.style.display = ‘none’;
+document.body.appendChild(a);
+a.click();
+setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
+toast(‘📊 ‘+label+’ 다운로드 완료! (파일 앱 확인)’);
+}
+
+function exportCSVShare(filtered, label){
+// iOS 폴백: CSV를 공유 시트로
+var header = ‘날짜,근무유형,출근시간,퇴근시간,순근무(시간),초과근무(시간)’;
+var rows = filtered.map(function(e){
+var date=e[0], r=e[1];
+var cfg = LCFG[r.leaveType||‘work’];
+return [date,(cfg&&cfg.label)||‘일반 근무’,
+r.checkIn?fts(r.checkIn):’’, r.checkOut?fts(r.checkOut):’’,
+(r.netSec/3600).toFixed(2),
+(Math.max(0,r.netSec-TARGET)/3600).toFixed(2)].join(’,’);
+});
+var csv = ‘\uFEFF’+header+’\n’+rows.join(’\n’);
+var csvBlob = new Blob([csv], {type:‘text/csv;charset=utf-8’});
+var csvFile = new File([csvBlob], ‘근무기록_’+label+’.csv’, {type:‘text/csv’});
+if(navigator.share && navigator.canShare && navigator.canShare({files:[csvFile]})){
+navigator.share({files:[csvFile], title:‘근무기록_’+label+’.csv’})
+.then(function(){ toast(‘📄 CSV 공유 완료!’); })
+.catch(function(){});
+} else if(navigator.clipboard){
+navigator.clipboard.writeText(csv).then(function(){
+toast(‘📋 클립보드 복사 완료! 메모앱에 붙여넣기하세요’);
+});
+} else {
+toast(‘PC에서 다운로드해 주세요’);
+}
+}
+
 function modalDelete(){
-  if(!mEditKey) return;
-  const key = mEditKey;
-  closeModal();
-  delRecord(key);
+if(!mEditKey) return;
+const key = mEditKey;
+closeModal();
+delRecord(key);
 }
 
 function closeModal(){
-  document.getElementById('overlay').classList.remove('show');
+document.getElementById(‘overlay’).classList.remove(‘show’);
 }
 function overlayClick(e){
-  if(e.target===document.getElementById('overlay'))closeModal();
+if(e.target===document.getElementById(‘overlay’))closeModal();
 }
 
 // ─────────────────────────────────────────────────────────
 //  TOAST
 // ─────────────────────────────────────────────────────────
 function toast(msg){
-  const w=document.getElementById('twrap'),e=document.createElement('div');
-  e.className='toast';e.textContent=msg;w.appendChild(e);
-  setTimeout(()=>e.remove(),2200);
+const w=document.getElementById(‘twrap’),e=document.createElement(‘div’);
+e.className=‘toast’;e.textContent=msg;w.appendChild(e);
+setTimeout(()=>e.remove(),2200);
 }
 
 // ─────────────────────────────────────────────────────────
 //  DAY GUARD  (미퇴근 상태로 날짜 바뀐 경우 자동 처리)
 // ─────────────────────────────────────────────────────────
 (function(){
-  if(S.status==='working'&&S.checkIn){
-    const ci=new Date(S.checkIn),now=new Date();
-    const same=ci.getFullYear()===now.getFullYear()&&ci.getMonth()===now.getMonth()&&ci.getDate()===now.getDate();
-    if(!same){
-      const eod=new Date(ci);eod.setHours(23,59,59,0);
-      const n=calcNet(S.checkIn,eod.getTime(),'work');
-      const ds=`${ci.getFullYear()}-${pad(ci.getMonth()+1)}-${pad(ci.getDate())}`;
-      if(!S.records[ds]) S.records[ds]={checkIn:S.checkIn,checkOut:eod.getTime(),leaveType:'work',netSec:n,isLeave:false};
-      S.status='off';S.checkIn=null;S.checkOut=null;S.leaveType='work';save();
-    }
-  }
+if(S.status===‘working’&&S.checkIn){
+const ci=new Date(S.checkIn),now=new Date();
+const same=ci.getFullYear()===now.getFullYear()&&ci.getMonth()===now.getMonth()&&ci.getDate()===now.getDate();
+if(!same){
+const eod=new Date(ci);eod.setHours(23,59,59,0);
+const n=calcNet(S.checkIn,eod.getTime(),‘work’);
+const ds=`${ci.getFullYear()}-${pad(ci.getMonth()+1)}-${pad(ci.getDate())}`;
+if(!S.records[ds]) S.records[ds]={checkIn:S.checkIn,checkOut:eod.getTime(),leaveType:‘work’,netSec:n,isLeave:false};
+S.status=‘off’;S.checkIn=null;S.checkOut=null;S.leaveType=‘work’;save();
+}
+}
 })();
 
 render();
 setInterval(()=>{
-  const n=new Date(),days=['일','월','화','수','목','금','토'];
-  document.getElementById('hdrDate').textContent=`${n.getMonth()+1}/${n.getDate()} (${days[n.getDay()]})`;
+const n=new Date(),days=[‘일’,‘월’,‘화’,‘수’,‘목’,‘금’,‘토’];
+document.getElementById(‘hdrDate’).textContent=`${n.getMonth()+1}/${n.getDate()} (${days[n.getDay()]})`;
 },60000);
 
 // iOS 홈 화면 추가 안내
 (function(){
-  const isStandalone = window.navigator.standalone === true;
-  const dismissed = localStorage.getItem('pwa_dismissed');
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  if(isIOS && !isStandalone && !dismissed){
-    setTimeout(()=>{ document.getElementById('pwaBanner').style.display='flex'; }, 1500);
-  }
+const isStandalone = window.navigator.standalone === true;
+const dismissed = localStorage.getItem(‘pwa_dismissed’);
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+if(isIOS && !isStandalone && !dismissed){
+setTimeout(()=>{ document.getElementById(‘pwaBanner’).style.display=‘flex’; }, 1500);
+}
 })();
 
 function dismissPWA(){
-  document.getElementById('pwaBanner').style.display='none';
-  localStorage.setItem('pwa_dismissed','1');
+document.getElementById(‘pwaBanner’).style.display=‘none’;
+localStorage.setItem(‘pwa_dismissed’,‘1’);
 }
 </script>
+
 </body>
 </html>
