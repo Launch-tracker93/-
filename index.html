@@ -643,6 +643,7 @@ function renderCal(){
     <div class="mcard-title">${calM+1}월 요약</div>
     <div class="mrow"><div class="mkey">근무일수</div><div class="mval">${wd}일</div></div>
     <div class="mrow"><div class="mkey">총 근무시간</div><div class="mval">${hm(tn)}</div></div>
+    <div class="mrow"><div class="mkey">초과근무일</div><div class="mval" style="color:var(--red)">${otD}일</div></div>
     <div class="mrow"><div class="mkey">총 초과근무</div><div class="mval" style="color:var(--red)">${otS>0?hm(otS):'—'}</div></div>
     <div class="mrow"><div class="mkey">미달근무일</div><div class="mval" style="color:var(--yellow)">${incD}일</div></div>
     <div class="mrow"><div class="mkey">휴가일수</div><div class="mval" style="color:var(--leave)">${lvD}일</div></div>`;
