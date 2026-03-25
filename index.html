@@ -1095,48 +1095,47 @@ function exportXLSX(){
   if(!filtered.length){ toast('내보낼 기록이 없습니다'); return; }
 
   var label    = isAll ? '전체' : histY+'년_'+(histM+1)+'월';
-  var filename = '근무기록_'+label+'.xls';
+  var filename = '근무기록_'+label+'.csv';
 
-  // 데이터 행 생성
-  var dataRows = filtered.map(function(e){
+  // 초 → "Xh Ym" 형식
+  function secToHM(s){
+    s = Math.max(0, s);
+    var h = Math.floor(s/3600);
+    var m = Math.floor((s%3600)/60);
+    if(h>0 && m>0) return h+'시간 '+m+'분';
+    if(h>0) return h+'시간';
+    if(m>0) return m+'분';
+    return '0분';
+  }
+
+  var csv = '\uFEFF';
+  csv += '날짜,근무유형,출근시간,퇴근시간,순근무,초과근무,비고\n';
+  filtered.forEach(function(e){
     var date=e[0], r=e[1];
     var cfg  = LCFG[r.leaveType||'work'];
     var inT  = r.checkIn  ? fts(r.checkIn)  : '';
     var outT = r.checkOut ? fts(r.checkOut) : '';
-    var netH = parseFloat((r.netSec/3600).toFixed(2));
-    var otH  = parseFloat((Math.max(0,r.netSec-TARGET)/3600).toFixed(2));
+    var netHM = secToHM(r.netSec);
+    var otSec = Math.max(0, r.netSec-TARGET);
+    var otHM  = otSec>0 ? secToHM(otSec) : '';
     var type = (cfg&&cfg.label)||'일반 근무';
     var note = r.isLeave ? type : '';
-    return '<Row>'+xlsCell(date)+xlsCell(type)+xlsCell(inT)+xlsCell(outT)+xlsCell(netH,true)+xlsCell(otH,true)+xlsCell(note)+'</Row>';
-  }).join('');
+    csv += [date,type,inT,outT,netHM,otHM,note].join(',') + '\n';
+  });
 
   // 월별 요약
   var months = {};
   filtered.forEach(function(e){
     var ym=e[0].slice(0,7), r=e[1];
-    if(!months[ym]) months[ym]={days:0,netH:0,otH:0,lv:0};
+    if(!months[ym]) months[ym]={days:0,netSec:0,otSec:0};
     months[ym].days++;
-    months[ym].netH += r.netSec/3600;
-    months[ym].otH  += Math.max(0,r.netSec-TARGET)/3600;
-    if(r.isLeave) months[ym].lv++;
+    months[ym].netSec += r.netSec;
+    months[ym].otSec  += Math.max(0,r.netSec-TARGET);
   });
-  var summaryRows = Object.entries(months).map(function(e){
+  csv += '\n월별 요약\n날짜,근무일수,총근무,총초과\n';
+  Object.entries(months).forEach(function(e){
     var ym=e[0], m=e[1];
-    return '<Row>'+xlsCell(ym)+xlsCell(m.days,true)+xlsCell(parseFloat(m.netH.toFixed(2)),true)+xlsCell(parseFloat(m.otH.toFixed(2)),true)+xlsCell(m.lv,true)+'</Row>';
-  }).join('');
-
-  var csv = '\uFEFF'; // BOM (한글 깨짐 방지)
-  csv += '날짜,근무유형,출근시간,퇴근시간,순근무(시간),초과근무(시간),비고\n';
-  filtered.forEach(function(e){
-    var date=e[0], r=e[1];
-    var cfg  = LCFG[r.leaveType||'work'];
-    var inT  = r.checkIn  ? fts(r.checkIn)  : '';
-    var outT = r.checkOut ? fts(r.checkOut) : '';
-    var netH = (r.netSec/3600).toFixed(2);
-    var otH  = (Math.max(0,r.netSec-TARGET)/3600).toFixed(2);
-    var type = (cfg&&cfg.label)||'일반 근무';
-    var note = r.isLeave ? type : '';
-    csv += [date,type,inT,outT,netH,otH,note].join(',') + '\n';
+    csv += [ym, m.days+'일', secToHM(m.netSec), m.otSec>0?secToHM(m.otSec):''].join(',') + '\n';
   });
 
   var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
