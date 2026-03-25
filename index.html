@@ -595,10 +595,12 @@ function render(){
   document.getElementById('iIn').textContent =fts(S.checkIn);
   document.getElementById('iOut').textContent=fts(S.checkOut);
 
-  // buttons
-  document.getElementById('bIn').style.display  =off?'':'none';
-  document.getElementById('bOut').style.display =working?'':'none';
-  document.getElementById('bDone').style.display=done?'':'none';
+  // buttons — done이어도 오늘 records가 없으면 출근 가능 (날짜 바뀐 엣지케이스 대비)
+  const todayHasRecord = !!S.records[todayKey()];
+  const canCheckIn = off || (done && !todayHasRecord);
+  document.getElementById('bIn').style.display  = canCheckIn ? '' : 'none';
+  document.getElementById('bOut').style.display = working    ? '' : 'none';
+  document.getElementById('bDone').style.display= (done && todayHasRecord) ? '' : 'none';
 
   // timer update
   if(doneWork){ const r=S.records[todayKey()]; if(r)updateTimerUI(r.netSec); }
@@ -643,8 +645,8 @@ function renderCal(){
     <div class="mcard-title">${calM+1}월 요약</div>
     <div class="mrow"><div class="mkey">근무일수</div><div class="mval">${wd}일</div></div>
     <div class="mrow"><div class="mkey">총 근무시간</div><div class="mval">${hm(tn)}</div></div>
-    <div class="mrow"><div class="mkey">초과근무일</div><div class="mval" style="color:var(--red)">${otD}일</div></div>
     <div class="mrow"><div class="mkey">총 초과근무</div><div class="mval" style="color:var(--red)">${otS>0?hm(otS):'—'}</div></div>
+    <div class="mrow"><div class="mkey">초과근무일</div><div class="mval" style="color:var(--red)">${otD}일</div></div>
     <div class="mrow"><div class="mkey">미달근무일</div><div class="mval" style="color:var(--yellow)">${incD}일</div></div>
     <div class="mrow"><div class="mkey">휴가일수</div><div class="mval" style="color:var(--leave)">${lvD}일</div></div>`;
 
@@ -1051,20 +1053,58 @@ function toast(msg){
 }
 
 // ─────────────────────────────────────────────────────────
-//  DAY GUARD  (미퇴근 상태로 날짜 바뀐 경우 자동 처리)
+//  DAY GUARD  (날짜 바뀌면 상태 리셋)
 // ─────────────────────────────────────────────────────────
 (function(){
-  if(S.status==='working'&&S.checkIn){
-    const ci=new Date(S.checkIn),now=new Date();
-    const same=ci.getFullYear()===now.getFullYear()&&ci.getMonth()===now.getMonth()&&ci.getDate()===now.getDate();
-    if(!same){
-      const eod=new Date(ci);eod.setHours(23,59,59,0);
-      const n=calcNet(S.checkIn,eod.getTime(),'work');
-      const ds=`${ci.getFullYear()}-${pad(ci.getMonth()+1)}-${pad(ci.getDate())}`;
-      if(!S.records[ds]) S.records[ds]={checkIn:S.checkIn,checkOut:eod.getTime(),leaveType:'work',netSec:n,isLeave:false};
-      S.status='off';S.checkIn=null;S.checkOut=null;S.leaveType='work';save();
+  function resetToday(){
+    S.status='off'; S.checkIn=null; S.checkOut=null; S.leaveType='work'; save();
+  }
+
+  if(S.checkIn || S.status==='done'){
+    const refTs = S.checkIn || (S.checkOut);
+    if(refTs){
+      const refDate = new Date(refTs);
+      const now = new Date();
+      const sameDay =
+        refDate.getFullYear()===now.getFullYear() &&
+        refDate.getMonth()===now.getMonth() &&
+        refDate.getDate()===now.getDate();
+
+      if(!sameDay){
+        // 미퇴근 상태로 날짜 바뀐 경우 → 23:59:59로 자동 기록
+        if(S.status==='working' && S.checkIn){
+          const eod=new Date(refDate); eod.setHours(23,59,59,0);
+          const n=calcNet(S.checkIn,eod.getTime(),'work');
+          const ds=`${refDate.getFullYear()}-${pad(refDate.getMonth()+1)}-${pad(refDate.getDate())}`;
+          if(!S.records[ds]) S.records[ds]={checkIn:S.checkIn,checkOut:eod.getTime(),leaveType:'work',netSec:n,isLeave:false};
+        }
+        resetToday();
+      }
+    } else {
+      // checkIn도 없고 done인 이상한 상태 → 리셋
+      if(S.status==='done') resetToday();
     }
   }
+
+  // 자정 넘어가면 자동 리셋 (앱 켜놓은 채로 날짜 바뀔 때)
+  function scheduleReset(){
+    const now=new Date();
+    const msUntilMidnight=(new Date(now.getFullYear(),now.getMonth(),now.getDate()+1))-now+500;
+    setTimeout(function(){
+      // 미퇴근 상태면 자동 기록
+      if(S.status==='working'&&S.checkIn){
+        const ci=new Date(S.checkIn);
+        const eod=new Date(ci);eod.setHours(23,59,59,0);
+        const n=calcNet(S.checkIn,eod.getTime(),'work');
+        const ds=`${ci.getFullYear()}-${pad(ci.getMonth()+1)}-${pad(ci.getDate())}`;
+        if(!S.records[ds]) S.records[ds]={checkIn:S.checkIn,checkOut:eod.getTime(),leaveType:'work',netSec:n,isLeave:false};
+      }
+      resetToday();
+      render();
+      scheduleReset();
+    }, msUntilMidnight);
+  }
+  scheduleReset();
 })();
 
 render();
