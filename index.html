@@ -165,7 +165,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .cday.today{background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-weight:700;}
 .cday.dim{opacity:.2;}
 .cdot{width:5px;height:5px;border-radius:50%;background:var(--green);}
-.cdot.ot{background:var(--accent2);}.cdot.inc{background:var(--yellow);}.cdot.lv{background:var(--leave);}
+.cdot.ot{background:var(--accent2);}.cdot.inc{background:var(--yellow);}
+.cdot.annual{background:var(--leave);}
+.cdot.half-am{background:#60a5fa;}
+.cdot.half-pm{background:#818cf8;}
+.cdot.half-q{background:#a78bfa;}
+.cdot.quarter{background:#f472b6;}
 .clegend{display:flex;gap:12px;justify-content:center;margin-top:12px;font-size:10px;color:var(--text3);}
 .clegend span{display:flex;align-items:center;gap:4px;}
 .ldot{width:6px;height:6px;border-radius:50%;display:inline-block;}
@@ -225,7 +230,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .finput:disabled{opacity:.35;cursor:not-allowed;}
 
 /* ── Type chips ── */
-.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:4px;}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:4px;}
 .chip{padding:10px 2px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;line-height:1.4;}
 .chip:hover{border-color:var(--accent);color:var(--accent);}
 .chip.sel{background:rgba(108,99,255,.15);border-color:var(--accent);color:var(--accent);}
@@ -345,7 +350,11 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <span><i class="ldot" style="background:var(--accent2)"></i>초과</span>
       <span><i class="ldot" style="background:var(--green)"></i>완료</span>
       <span><i class="ldot" style="background:var(--yellow)"></i>미달</span>
-      <span><i class="ldot" style="background:var(--leave)"></i>휴가</span>
+      <span><i class="ldot" style="background:var(--leave)"></i>연차</span>
+      <span><i class="ldot" style="background:#60a5fa"></i>오전반차</span>
+      <span><i class="ldot" style="background:#818cf8"></i>오후반차</span>
+      <span><i class="ldot" style="background:#f472b6"></i>반반차</span>
+      <span><i class="ldot" style="background:#a78bfa"></i>반차+반반차</span>
     </div>
   </div><!-- /calendar -->
 
@@ -396,11 +405,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <!-- Type chips -->
   <div class="field">
     <div class="flabel">근무 유형</div>
-    <div class="chips">
+    <div class="chips" style="grid-template-columns:repeat(3,1fr);">
       <button class="chip" id="ch-work"    onclick="selType('work')">💼<br>일반</button>
       <button class="chip lv-chip" id="ch-half_am" onclick="selType('half_am')">🌅<br>오전반차</button>
       <button class="chip lv-chip" id="ch-half_pm" onclick="selType('half_pm')">🌇<br>오후반차</button>
       <button class="chip lv-chip" id="ch-quarter"  onclick="selType('quarter')">⏰<br>반반차</button>
+      <button class="chip lv-chip" id="ch-half_q"   onclick="selType('half_q')">🌗<br>반차+반반차</button>
       <button class="chip lv-chip" id="ch-annual"   onclick="selType('annual')">🏖<br>연차</button>
     </div>
   </div>
@@ -410,7 +420,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="lv-infobox" id="mLeaveInfoBox"></div>
   </div>
 
-  <!-- Work fields -->
+  <!-- Work fields (일반 근무 + 반차/반반차 모두 표시) -->
   <div id="mWorkFields">
     <div class="field">
       <div class="flabel">출근 시간 / 퇴근 시간</div>
@@ -419,8 +429,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <input type="time" class="finput" id="mOut" placeholder="18:00">
       </div>
     </div>
-    <div class="field">
-      <div class="flabel">순 근무시간 직접 입력 <span style="color:var(--text3);font-size:9px;letter-spacing:0;text-transform:none">(비우면 출퇴근 시간으로 자동 계산)</span></div>
+    <div class="field" id="mNetField">
+      <div class="flabel">순 근무시간 직접 입력 <span style="color:var(--text3);font-size:9px;letter-spacing:0;text-transform:none">(비우면 자동 계산)</span></div>
       <input type="text" class="finput" id="mNet" placeholder="예: 7:30 · 7h30m · 7.5">
     </div>
   </div>
@@ -452,14 +462,38 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 // ─────────────────────────────────────────────────────────
 const TARGET=8*3600, LUNCH=3600, CIRC=175.9, KEY='tc_v5';
 
-// netSec = 자동 인정 근무시간 (일반 근무는 null → 실제 계산)
+// fixedSec: 휴가로 인정되는 시간 (실근무 + fixedSec = 8h 목표)
+// 반차(4h): 실근무 4h + 고정 4h = 8h
+// 반반차(2h): 실근무 6h + 고정 2h = 8h
+// 반차+반반차(6h): 실근무 2h + 고정 6h = 8h
 const LCFG = {
-  work:    {label:'일반 근무', icon:'💼', netSec:null,   target:TARGET, deductLunch:true },
-  half_am: {label:'오전 반차', icon:'🌅', netSec:4*3600, target:TARGET, deductLunch:false},
-  half_pm: {label:'오후 반차', icon:'🌇', netSec:4*3600, target:TARGET, deductLunch:false},
-  quarter: {label:'반반차',    icon:'⏰', netSec:2*3600, target:TARGET, deductLunch:false},
-  annual:  {label:'연차',      icon:'🏖', netSec:8*3600, target:TARGET, deductLunch:false},
+  work:    {label:'일반 근무',     icon:'💼', netSec:null,   fixedSec:0      },
+  half_am: {label:'오전 반차',     icon:'🌅', netSec:null,   fixedSec:4*3600 },
+  half_pm: {label:'오후 반차',     icon:'🌇', netSec:null,   fixedSec:4*3600 },
+  quarter: {label:'반반차',        icon:'⏰', netSec:null,   fixedSec:2*3600 },
+  half_q:  {label:'반차+반반차',   icon:'🌗', netSec:null,   fixedSec:6*3600 },
+  annual:  {label:'연차',          icon:'🏖', netSec:8*3600, fixedSec:8*3600 },
 };
+
+// ── 근무시간 계산 최종 ──
+// 모든 유형의 목표 = 8h
+// netSec = 실근무 + 휴가고정시간
+// 반차(오전/오후): 점심없이 퇴근 → raw + 4h
+// 반반차: 점심1h 차감 후 raw + 2h
+// 반차+반반차: 점심1h 차감 후 raw + 6h
+// 일반: 점심1h 차감
+// 연차: 8h 고정 (초과 아님)
+function calcNet(ci, co, lt){
+  const cfg = LCFG[lt||'work'];
+  if(lt==='annual') return 8*3600;
+  const end = co || Date.now();
+  const raw = Math.floor((end - ci) / 1000);
+  const noLunch = (lt==='half_am'||lt==='half_pm'||lt==='half_q');
+  const worked = Math.max(0, raw - (noLunch ? 0 : LUNCH));
+  return worked + (cfg.fixedSec||0);
+}
+
+function getTarget(){ return TARGET; }
 
 // ─────────────────────────────────────────────────────────
 //  STATE
@@ -482,15 +516,18 @@ function hm(s){
   const h=Math.floor(s/3600), m=Math.floor(s%3600/60);
   return h?(m?`${h}시간 ${m}분`:`${h}시간`):(m?`${m}분`:'0분');
 }
-function fts(ts){ if(!ts)return'—'; const d=new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
-function isLeave(lt){ return lt&&lt!=='work'; }
-
-function calcNet(ci, co, lt){
-  const cfg=LCFG[lt||'work'];
-  if(isLeave(lt)) return cfg.netSec;           // fixed for leave
-  const raw=Math.floor(((co||Date.now())-ci)/1000);
-  return Math.max(0, raw - (cfg.deductLunch?LUNCH:0));
+// 초과근무 표시용 — 분 단위까지만 (초 생략)
+function hmShort(s){
+  s=Math.max(0,s);
+  const h=Math.floor(s/3600), m=Math.floor(s%3600/60);
+  if(h===0) return m+'분';
+  if(m===0) return h+'시간';
+  return h+'시간 '+m+'분';
 }
+function fts(ts){ if(!ts)return'—'; const d=new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function isLeave(lt){ return lt && lt!=='work'; }
+function isAnnual(lt){ return lt==='annual'; }
+function isHalf(lt){ return lt==='half_am'||lt==='half_pm'||lt==='quarter'||lt==='half_q'; }
 
 function parseNetStr(str){
   if(!str||!str.trim()) return null;
@@ -526,10 +563,12 @@ function stopTick(){ clearInterval(ticker); ticker=null; }
 function tick(){ if(S.status!=='working'){stopTick();return;} updateTimerUI(calcNet(S.checkIn,null,'work')); }
 
 function updateTimerUI(n){
+  const lt    = S.leaveType || 'work';
+  const tgt   = TARGET;
   const endTs = S.checkOut || Date.now();
   const raw   = S.checkIn ? Math.floor((endTs-S.checkIn)/1000) : 0;
-  const isOT  = n>=TARGET;
-  const ot    = Math.max(0,n-TARGET);
+  const isOT  = n >= tgt;
+  const ot    = Math.max(0, n - tgt);
   const alive = S.status==='working';
 
   document.getElementById('tdisp').textContent = hms(n);
@@ -538,16 +577,16 @@ function updateTimerUI(n){
 
   const sub=document.getElementById('tsub');
   if(!S.checkIn)             sub.textContent='출근하지 않았습니다';
-  else if(S.status==='done') sub.textContent=isOT?`초과 ${hm(ot)}`:(n>=TARGET*0.99?'목표 달성 ✓':`목표까지 ${hm(TARGET-n)} 미달`);
+  else if(S.status==='done') sub.textContent=isOT?`초과 ${hm(ot)}`:(n>=tgt*0.99?'목표 달성 ✓':`목표까지 ${hm(tgt-n)} 미달`);
   else if(isOT)              sub.textContent=`목표 달성 🎉  +${hm(ot)} 초과 중`;
-  else                       sub.textContent=`목표까지 ${hm(TARGET-n)} 남음`;
+  else                       sub.textContent=`목표까지 ${hm(tgt-n)} 남음`;
 
-  const pct=Math.min(n/TARGET,1);
+  const pct=Math.min(n/tgt,1);
   document.getElementById('rfill').style.strokeDashoffset=CIRC*(1-pct);
   document.getElementById('rfill').style.stroke=isOT?'var(--accent2)':'var(--green)';
   document.getElementById('rpct').textContent=Math.round(pct*100)+'%';
   document.getElementById('pEl').textContent  =S.checkIn?hms(raw):'—';
-  document.getElementById('pRem').textContent =!S.checkIn?'—':isOT?'완료 ✓':hms(TARGET-n);
+  document.getElementById('pRem').textContent =!S.checkIn?'—':isOT?'완료 ✓':hms(tgt-n);
   document.getElementById('pRem').className   ='pval'+(isOT?' ok':'');
   document.getElementById('pOT').textContent  =isOT?'+'+hms(ot):'—';
   document.getElementById('otb').classList.toggle('show',isOT&&!!S.checkIn&&S.status!=='off');
@@ -630,25 +669,36 @@ function renderCal(){
   const recs=Object.entries(S.records).filter(([k])=>k.startsWith(prefix)).map(([,v])=>v);
   const wd=recs.length;
   const tn=recs.reduce((a,r)=>a+r.netSec,0);
-  const otD=recs.filter(r=>!r.isLeave&&r.netSec>=TARGET).length;
-  const otS=recs.filter(r=>!r.isLeave).reduce((a,r)=>a+Math.max(0,r.netSec-TARGET),0);
-  const incD=recs.filter(r=>!r.isLeave&&r.netSec<TARGET).length;
-  const lvD=recs.filter(r=>r.isLeave).length;
-  const mt=wd*TARGET, gp=wd>0?Math.min(tn/mt*100,100):0;
+  const mt=wd*TARGET; // 날별 목표 항상 8h
+  const otS=recs.reduce((a,r)=>a+Math.max(0,r.netSec-TARGET),0);
+  const incS=recs.reduce((a,r)=>a+Math.max(0,TARGET-r.netSec),0);
+  const gp=mt>0?Math.min(tn/mt*100,100):0;
+  const diffTxt = tn>=mt
+    ? (otS>0?'<span style="color:var(--red)">+'+hmShort(otS)+' 초과</span>':'목표 달성 ✓')
+    : '<span style="color:var(--yellow)">-'+hmShort(incS)+' 미달</span>';
 
   document.getElementById('gbarWrap').innerHTML=`
     <div class="gbar-hdr"><div class="gbar-title">이번 달 목표 달성률</div><div class="gbar-pct">${gp.toFixed(1)}%</div></div>
     <div class="gbar-track"><div class="gbar-fill" style="width:${gp}%"></div></div>
-    <div class="gbar-sub">${hm(tn)} / ${hm(mt)}</div>`;
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+      <div class="gbar-sub">${hm(tn)} / ${hm(mt)}</div>
+      <div style="font-size:11px;font-weight:600;">${wd>0?diffTxt:''}</div>
+    </div>`;
+
+  const lvCount = recs.reduce(function(a,r){
+    if(r.leaveType==='annual')  return a+1;
+    if(r.leaveType==='half_am'||r.leaveType==='half_pm') return a+0.5;
+    if(r.leaveType==='quarter') return a+0.25;
+    if(r.leaveType==='half_q')  return a+0.75;
+    return a;
+  },0);
 
   document.getElementById('mcard').innerHTML=`
     <div class="mcard-title">${calM+1}월 요약</div>
     <div class="mrow"><div class="mkey">근무일수</div><div class="mval">${wd}일</div></div>
     <div class="mrow"><div class="mkey">총 근무시간</div><div class="mval">${hm(tn)}</div></div>
-    <div class="mrow"><div class="mkey">총 초과근무</div><div class="mval" style="color:var(--red)">${otS>0?hm(otS):'—'}</div></div>
-    <div class="mrow"><div class="mkey">초과근무일</div><div class="mval" style="color:var(--red)">${otD}일</div></div>
-    <div class="mrow"><div class="mkey">미달근무일</div><div class="mval" style="color:var(--yellow)">${incD}일</div></div>
-    <div class="mrow"><div class="mkey">휴가일수</div><div class="mval" style="color:var(--leave)">${lvD}일</div></div>`;
+    <div class="mrow"><div class="mkey">총 초과근무</div><div class="mval" style="color:var(--red)">${otS>0?hmShort(otS):'—'}</div></div>
+    <div class="mrow"><div class="mkey">휴가</div><div class="mval" style="color:var(--leave)">${lvCount>0?lvCount+'일':'—'}</div></div>`;
 
   const grid=document.getElementById('cgrid'); grid.innerHTML='';
   ['일','월','화','수','목','금','토'].forEach(d=>{const e=document.createElement('div');e.className='cdow';e.textContent=d;grid.appendChild(e);});
@@ -661,8 +711,13 @@ function renderCal(){
     if(r){
       e.classList.add('has');
       const dot=document.createElement('div'); dot.className='cdot';
-      if(r.isLeave) dot.classList.add('lv');
-      else if(r.netSec>=TARGET) dot.classList.add('ot');
+      const tgt=TARGET;
+      if(r.leaveType==='annual') dot.classList.add('annual');
+      else if(r.leaveType==='quarter') dot.classList.add('quarter');
+      else if(r.leaveType==='half_am') dot.classList.add('half-am');
+      else if(r.leaveType==='half_pm') dot.classList.add('half-pm');
+      else if(r.leaveType==='half_q')  dot.classList.add('half-q');
+      else if(r.netSec>=tgt) dot.classList.add('ot');
       else dot.classList.add('inc');
       e.appendChild(dot);
       const cfg=LCFG[r.leaveType||'work'];
@@ -714,7 +769,14 @@ function renderHist(){
     const recs = filtered.map(([,v])=>v);
     const tn  = recs.reduce((a,r)=>a+r.netSec,0);
     const otS = recs.reduce((a,r)=>a+Math.max(0,r.netSec-TARGET),0);
-    const lvD = recs.filter(r=>r.isLeave).length;
+    const lvCount = recs.reduce(function(a,r){
+      if(r.leaveType==='annual')  return a+1;
+      if(r.leaveType==='half_am'||r.leaveType==='half_pm') return a+0.5;
+      if(r.leaveType==='quarter') return a+0.25;
+      if(r.leaveType==='half_q')  return a+0.75;
+      return a;
+    },0);
+    const lvTxt = lvCount>0 ? (Number.isInteger(lvCount)?lvCount:lvCount)+'일' : '—';
     summEl.innerHTML='<div style="display:flex;gap:8px;margin-bottom:12px;">'+
       '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
         '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">총근무</div>'+
@@ -722,11 +784,11 @@ function renderHist(){
       '</div>'+
       '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
         '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">초과</div>'+
-        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:var(--red);">'+( otS>0?hm(otS):'—')+'</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:var(--red);">'+( otS>0?hmShort(otS):'—')+'</div>'+
       '</div>'+
       '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
         '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">휴가</div>'+
-        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:var(--leave);">'+lvD+'일</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:var(--leave);">'+lvTxt+'</div>'+
       '</div>'+
     '</div>';
   } else { summEl.innerHTML=''; }
@@ -738,24 +800,23 @@ function renderHist(){
 
   wrap.innerHTML=filtered.map(([date,r])=>{
     const[,m,d]=date.split('-');
-    const lv=r.isLeave, cfg=LCFG[r.leaveType||'work'];
+    const annual=isAnnual(r.leaveType), cfg=LCFG[r.leaveType||'work'];
     const ot=Math.max(0,r.netSec-TARGET);
-    let tc,tt;
-    if(lv){tc='t-lv';tt=(cfg&&cfg.label)||'휴가';}
-    else if(r.netSec>=TARGET){tc='t-ot';tt='초과';}
-    else if(r.netSec>=TARGET*0.99){tc='t-ok';tt='완료';}
-    else{tc='t-inc';tt='미달';}
-    const timeRow=lv
-      ?((cfg&&cfg.icon)||'')+" "+((cfg&&cfg.label)||'휴가')+" · 근무시간 "+hm(r.netSec)+" 인정"
-      :"출근 <b>"+fts(r.checkIn)+"</b> · 퇴근 <b>"+fts(r.checkOut)+"</b>";
+    const inc=Math.max(0,TARGET-r.netSec);
+    // 연차만 특별 표시, 나머지는 출퇴근 시간 표시
+    const timeRow = annual
+      ? ((cfg&&cfg.icon)||'')+" "+((cfg&&cfg.label)||'연차')+" · 8시간 인정"
+      : ((cfg&&cfg.icon)||'')+" "+((cfg&&cfg.label)||'일반')+" · 출근 <b>"+fts(r.checkIn)+"</b> · 퇴근 <b>"+fts(r.checkOut)+"</b>";
+    const otTxt = ot>0
+      ? '<span class="hot-txt"> +'+hmShort(ot)+'</span>'
+      : (inc>0 ? '<span style="color:var(--yellow);font-size:11px;"> -'+hmShort(inc)+'</span>' : '');
     return '<div class="hitem" id="hr-'+date+'">'+
       '<div class="hdate">'+m+'/'+d+'</div>'+
       '<div class="hinfo">'+
         '<div class="htimes">'+timeRow+'</div>'+
-        '<div class="hdur">'+hms(r.netSec)+( (!lv&&ot>0)?'<span class="hot-txt"> +'+hm(ot)+'</span>':'')+'</div>'+
+        '<div class="hdur">'+hms(r.netSec)+otTxt+'</div>'+
       '</div>'+
       '<div class="hact-wrap">'+
-        '<div class="htag '+tc+'">'+tt+'</div>'+
         '<button class="hact" onclick="openModal(\''+date+'\')" title="수정">✏️</button>'+
         '<button class="hact del" onclick="delRecord(\''+date+'\')" title="삭제">🗑</button>'+
       '</div>'+
@@ -843,12 +904,15 @@ function openModal(editKey){
   selType(initType);
 
   if(isEdit){
-    const r=S.records[mEditKey];
-    if(r&&!r.isLeave){
-      if(r.checkIn){const ci=new Date(r.checkIn);document.getElementById('mIn').value=pad(ci.getHours())+':'+pad(ci.getMinutes());}
-      else document.getElementById('mIn').value='';
-      if(r.checkOut){const co=new Date(r.checkOut);document.getElementById('mOut').value=pad(co.getHours())+':'+pad(co.getMinutes());}
-      else document.getElementById('mOut').value='';
+    const r = S.records[mEditKey];
+    if(r){
+      // 출퇴근 시간 복원 (연차 제외)
+      if(!isAnnual(r.leaveType||'work')){
+        if(r.checkIn){ const ci=new Date(r.checkIn); document.getElementById('mIn').value=pad(ci.getHours())+':'+pad(ci.getMinutes()); }
+        else document.getElementById('mIn').value='';
+        if(r.checkOut){ const co=new Date(r.checkOut); document.getElementById('mOut').value=pad(co.getHours())+':'+pad(co.getMinutes()); }
+        else document.getElementById('mOut').value='';
+      }
       document.getElementById('mNet').value='';
     }
     document.getElementById('mBtnDel').style.display='';
@@ -861,52 +925,81 @@ function openModal(editKey){
 }
 
 function selType(type){
-  mCurType=type;
-  const lv=isLeave(type);
+  mCurType = type;
+  const lv = isLeave(type);
+  const annual = isAnnual(type);
 
-  // chips highlight
+  // 칩 하이라이트
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel','lv-sel'));
-  const chip=document.getElementById('ch-'+type);
-  if(chip) chip.classList.add(lv?'lv-sel':'sel');
+  const chip = document.getElementById('ch-'+type);
+  if(chip) chip.classList.add(lv ? 'lv-sel' : 'sel');
 
-  // work fields visibility
-  document.getElementById('mWorkFields').style.display=lv?'none':'';
+  // 연차: 출퇴근 숨김 / 나머지: 출퇴근 표시
+  document.getElementById('mWorkFields').style.display = annual ? 'none' : '';
+  // 반차/반반차: 순근무 직접입력 숨김 (자동합산)
+  var netField = document.getElementById('mNetField');
+  if(netField) netField.style.display = (lv && !annual) ? 'none' : '';
 
-  // leave info box
+  // 인포박스
   if(lv){
-    const cfg=LCFG[type];
-    document.getElementById('mLeaveInfoBox').innerHTML=`
-      <div class="lv-infobox-row">
-        <div class="lv-infobox-key">${cfg.icon} ${cfg.label} — 자동 인정 근무시간</div>
-        <div class="lv-infobox-val">${hm(cfg.netSec)}</div>
-      </div>`;
-    document.getElementById('mLeaveInfo').style.display='';
+    const cfg = LCFG[type];
+    const fixedLabel = type==='annual'    ? '연차 — 8시간 자동 인정'
+      : type==='half_am'  ? '오전 반차 — 실근무 4h + 고정 4h = 8h'
+      : type==='half_pm'  ? '오후 반차 — 실근무 4h + 고정 4h = 8h'
+      : type==='quarter'  ? '반반차 — 실근무 6h + 고정 2h = 8h'
+      : type==='half_q'   ? '반차+반반차 — 실근무 2h + 고정 6h = 8h'
+      : '';
+    document.getElementById('mLeaveInfoBox').innerHTML =
+      '<div class="lv-infobox-row">' +
+        '<div class="lv-infobox-key">' + cfg.icon + ' ' + fixedLabel + '</div>' +
+        (annual ? '<div class="lv-infobox-val">8시간</div>' : '') +
+      '</div>';
+    document.getElementById('mLeaveInfo').style.display = '';
   } else {
-    document.getElementById('mLeaveInfo').style.display='none';
+    document.getElementById('mLeaveInfo').style.display = 'none';
   }
 }
 
 function saveModal(){
-  const dk=document.getElementById('mDate').value;
-  if(!dk){toast('날짜를 선택해주세요');return;}
-  const type=mCurType||'work';
-  const lv=isLeave(type);
-  const cfg=LCFG[type];
+  const dk = document.getElementById('mDate').value;
+  if(!dk){ toast('날짜를 선택해주세요'); return; }
+  const type = mCurType || 'work';
+  const annual = isAnnual(type);
+  const lv = isLeave(type);
+  const cfg = LCFG[type];
   let rec;
 
-  if(lv){
-    rec={leaveType:type,netSec:cfg.netSec,checkIn:null,checkOut:null,isLeave:true};
+  if(annual){
+    // 연차: 고정 8h, 출퇴근 없음
+    rec = {leaveType:type, netSec:cfg.netSec, checkIn:null, checkOut:null, isLeave:true};
   } else {
-    const inV=document.getElementById('mIn').value;
-    const outV=document.getElementById('mOut').value;
-    const netStr=document.getElementById('mNet').value;
-    let ci=null,co=null;
-    if(inV){const[h,m]=inV.split(':').map(Number);const d=new Date(dk);d.setHours(h,m,0,0);ci=d.getTime();}
-    if(outV){const[h,m]=outV.split(':').map(Number);const d=new Date(dk);d.setHours(h,m,0,0);co=d.getTime();}
-    let ns=parseNetStr(netStr);
-    if(ns===null&&ci&&co) ns=Math.max(0,Math.floor((co-ci)/1000)-LUNCH);
-    if(ns===null){toast('출근/퇴근 시간 또는 순 근무시간을 입력해주세요');return;}
-    rec={leaveType:'work',checkIn:ci,checkOut:co,netSec:ns,isLeave:false};
+    // 일반 / 반차 / 반반차: 출퇴근 시간 입력
+    const inV   = document.getElementById('mIn').value;
+    const outV  = document.getElementById('mOut').value;
+    const netStr= document.getElementById('mNet').value;
+    let ci=null, co=null;
+    if(inV){ const[h,m]=inV.split(':').map(Number); const d=new Date(dk); d.setHours(h,m,0,0); ci=d.getTime(); }
+    if(outV){ const[h,m]=outV.split(':').map(Number); const d=new Date(dk); d.setHours(h,m,0,0); co=d.getTime(); }
+
+    let ns = null;
+    if(lv){
+      if(ci && co){
+        const raw = Math.max(0, Math.floor((co-ci)/1000));
+        const noLunch = (type==='half_am'||type==='half_pm'||type==='half_q');
+        const worked = Math.max(0, raw - (noLunch ? 0 : LUNCH));
+        ns = worked + (cfg.fixedSec||0);
+      } else if(ci||co){
+        toast('출근/퇴근 시간을 모두 입력해주세요'); return;
+      } else {
+        ns = cfg.fixedSec||0;
+      }
+    } else {
+      ns = parseNetStr(netStr);
+      if(ns===null && ci && co) ns = Math.max(0, Math.floor((co-ci)/1000) - LUNCH);
+      if(ns===null){ toast('출근/퇴근 시간 또는 순 근무시간을 입력해주세요'); return; }
+    }
+
+    rec = {leaveType:type, checkIn:ci, checkOut:co, netSec:ns, isLeave:lv};
   }
 
   S.records[dk]=rec;
@@ -1051,6 +1144,23 @@ function toast(msg){
   e.className='toast';e.textContent=msg;w.appendChild(e);
   setTimeout(()=>e.remove(),2200);
 }
+
+// 기존 half 데이터 → half_am 마이그레이션
+// 반차/반반차 데이터에 fixedSec이 누락된 경우 보정
+(function(){
+  var changed = false;
+  Object.entries(S.records).forEach(function(e){
+    var r=e[1];
+    if(r.leaveType==='half'){ r.leaveType='half_am'; changed=true; }
+    var cfg = LCFG[r.leaveType];
+    if(cfg && cfg.fixedSec>0 && !isAnnual(r.leaveType) && r.checkIn && r.checkOut){
+      // calcNet으로 올바른 값 재계산
+      var correct = calcNet(r.checkIn, r.checkOut, r.leaveType);
+      if(r.netSec !== correct){ r.netSec=correct; changed=true; }
+    }
+  });
+  if(changed) save();
+})();
 
 // ─────────────────────────────────────────────────────────
 //  DAY GUARD  (날짜 바뀌면 상태 리셋)
