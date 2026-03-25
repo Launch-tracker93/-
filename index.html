@@ -235,7 +235,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .chip:hover{border-color:var(--accent);color:var(--accent);}
 .chip.sel{background:rgba(108,99,255,.15);border-color:var(--accent);color:var(--accent);}
 .chip.lv-sel{background:rgba(167,139,250,.15);border-color:var(--leave);color:var(--leave);}
-.chip:hover.lv-chip{border-color:var(--leave);color:var(--leave);}
+.chip.lv-chip{color:var(--text2);border-color:var(--border);}
 
 /* ── Modal action buttons ── */
 .mbtns{display:flex;gap:10px;margin-top:6px;}
@@ -580,8 +580,9 @@ function doIn(){
 }
 function doOut(){
   S.checkOut=Date.now(); S.status='done';
-  const n=calcNet(S.checkIn,S.checkOut,'work');
-  S.records[todayKey()]={checkIn:S.checkIn,checkOut:S.checkOut,leaveType:'work',netSec:n,isLeave:false};
+  const lt=S.leaveType||'work';
+  const n=calcNet(S.checkIn,S.checkOut,lt);
+  S.records[todayKey()]={checkIn:S.checkIn,checkOut:S.checkOut,leaveType:lt,netSec:n,isLeave:isLeave(lt)};
   save(); stopTick(); toast('👋 퇴근 완료! 수고하셨습니다!'); render();
 }
 
@@ -590,7 +591,7 @@ function doOut(){
 // ─────────────────────────────────────────────────────────
 function startTick(){ stopTick(); ticker=setInterval(tick,1000); tick(); }
 function stopTick(){ clearInterval(ticker); ticker=null; }
-function tick(){ if(S.status!=='working'){stopTick();return;} updateTimerUI(calcNet(S.checkIn,null,'work')); }
+function tick(){ if(S.status!=='working'){stopTick();return;} updateTimerUI(calcNet(S.checkIn,null,S.leaveType||'work')); }
 
 function updateTimerUI(n){
   const lt    = S.leaveType || 'work';
@@ -635,19 +636,18 @@ function render(){
   const rec=S.records[todayKey()];
   const lt=rec?rec.leaveType:(S.leaveType||'work');
   const lv=rec?rec.isLeave:false;
+  const off=S.status==='off', working=S.status==='working', done=S.status==='done';
+  const doneLv   = done && lt==='annual';
+  const doneWork = done && lt!=='annual';
   const sb=document.getElementById('sbadge');
-  sb.className='sbadge '+({off:'s-off',working:'s-work',done:lv?'s-leave':'s-done'}[S.status]||'s-off');
+  sb.className='sbadge '+({off:'s-off',working:'s-work',done:doneLv?'s-leave':'s-done'}[S.status]||'s-off');
   document.getElementById('stext').textContent=
     S.status==='off'?'미출근':
     S.status==='working'?'근무중':
-    (lv?((LCFG[lt]&&LCFG[lt].label)||'휴가'):'퇴근완료');
+    (doneLv?((LCFG[lt]&&LCFG[lt].label)||'연차'):'퇴근완료');
 
-  const off=S.status==='off', working=S.status==='working', done=S.status==='done';
-  const doneWork=done&&(!lv);
-  const doneLv  =done&&lv;
-
-  // lunch note: only for work mode
-  document.getElementById('lunchNote').style.display=off||working||doneWork?'':'none';
+  // lunch note: 연차만 숨김
+  document.getElementById('lunchNote').style.display = doneLv ? 'none' : '';
 
   // leave done card
   const ldEl=document.getElementById('leaveDone');
@@ -672,7 +672,7 @@ function render(){
   document.getElementById('bDone').style.display= (done && todayHasRecord) ? '' : 'none';
 
   // timer update
-  if(doneWork){ const r=S.records[todayKey()]; if(r)updateTimerUI(r.netSec); }
+  if(doneWork){ const r=S.records[todayKey()]; if(r) updateTimerUI(r.netSec); }
   else if(working){ if(!ticker)startTick(); else tick(); }
   else updateTimerUI(0);
 }
@@ -752,7 +752,7 @@ function renderCal(){
         const dotWrap=document.createElement('div');
         dotWrap.style.cssText='display:flex;gap:2px;align-items:center;justify-content:center;';
         const dot1=document.createElement('div'); dot1.className='cdot';
-        dot1.classList.add(r.netSec>=tgt?'ot':(r.netSec>=tgt*0.99?'ot':'inc'));
+        dot1.classList.add(r.netSec > tgt ? 'ot' : 'inc');
         const dot2=document.createElement('div'); dot2.className='cdot';
         if(r.leaveType==='half_am') dot2.classList.add('half-am');
         else if(r.leaveType==='half_pm') dot2.classList.add('half-pm');
@@ -763,7 +763,7 @@ function renderCal(){
       } else {
         // 일반: 점 1개 (초과/완료/미달)
         const dot=document.createElement('div'); dot.className='cdot';
-        dot.classList.add(r.netSec>=tgt?'ot':'inc');
+        dot.classList.add(r.netSec > tgt ? 'ot' : 'inc');
         e.appendChild(dot);
       }
       const cfg=LCFG[r.leaveType||'work'];
@@ -977,29 +977,33 @@ function selType(type){
   const lv = isLeave(type);
   const annual = isAnnual(type);
 
-  // 칩 하이라이트
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel','lv-sel'));
-  const chip = document.getElementById('ch-'+type);
+  // 칩 하이라이트 — 모두 초기화 후 선택
+  document.querySelectorAll('.chip').forEach(function(c){
+    c.classList.remove('sel','lv-sel');
+  });
+  var chip = document.getElementById('ch-'+type);
   if(chip) chip.classList.add(lv ? 'lv-sel' : 'sel');
 
-  // 연차: 출퇴근 숨김 / 나머지: 출퇴근 표시
+  // 출퇴근 필드: 연차만 숨김, 나머지 모두 표시
   document.getElementById('mWorkFields').style.display = annual ? 'none' : '';
-  // 반차/반반차: 순근무 직접입력 숨김 (자동합산)
+
+  // 순근무 직접입력: 휴가 유형이면 숨김 (자동계산)
   var netField = document.getElementById('mNetField');
   if(netField) netField.style.display = (lv && !annual) ? 'none' : '';
 
   // 인포박스
   if(lv){
-    const cfg = LCFG[type];
-    const fixedLabel = type==='annual'    ? '연차 — 8시간 자동 인정'
-      : type==='half_am'  ? '오전 반차 — 실근무 4h + 고정 4h = 8h'
-      : type==='half_pm'  ? '오후 반차 — 실근무 4h + 고정 4h = 8h'
-      : type==='quarter'  ? '반반차 — 실근무 6h + 고정 2h = 8h'
-      : type==='half_q'   ? '반차+반반차 — 실근무 2h + 고정 6h = 8h'
+    var cfg = LCFG[type];
+    var fixedLabel =
+        type==='annual'  ? '연차 — 8시간 자동 인정'
+      : type==='half_am' ? '오전 반차 — 점심없이 실근무 4h + 4h = 8h'
+      : type==='half_pm' ? '오후 반차 — 점심없이 실근무 4h + 4h = 8h'
+      : type==='quarter' ? '반반차 — 점심 1h 차감 후 실근무 6h + 2h = 8h'
+      : type==='half_q'  ? '반차+반반차 — 점심없이 실근무 2h + 6h = 8h'
       : '';
     document.getElementById('mLeaveInfoBox').innerHTML =
       '<div class="lv-infobox-row">' +
-        '<div class="lv-infobox-key">' + cfg.icon + ' ' + fixedLabel + '</div>' +
+        '<div class="lv-infobox-key">' + (cfg?cfg.icon:'') + ' ' + fixedLabel + '</div>' +
         (annual ? '<div class="lv-infobox-val">8시간</div>' : '') +
       '</div>';
     document.getElementById('mLeaveInfo').style.display = '';
@@ -1051,11 +1055,15 @@ function saveModal(){
   }
 
   S.records[dk]=rec;
-  // sync today's live state if editing today
   if(dk===todayKey()){
     S.leaveType=type;
-    if(lv){S.status='done';S.checkIn=null;S.checkOut=null;}
-    else if(rec.checkIn){S.checkIn=rec.checkIn;S.checkOut=rec.checkOut;S.status='done';}
+    if(isAnnual(type)){
+      S.status='done'; S.checkIn=null; S.checkOut=null;
+    } else if(rec.checkIn){
+      S.checkIn=rec.checkIn; S.checkOut=rec.checkOut; S.status='done';
+    } else if(isLeave(type)){
+      S.status='done'; S.checkIn=null; S.checkOut=null;
+    }
   }
   save();
   toast(mEditKey?'✅ 기록 수정 완료':'✅ 기록 추가 완료');
