@@ -1339,6 +1339,23 @@ function dismissPWA(){
   document.getElementById('pwaBanner').style.display='none';
   localStorage.setItem('pwa_dismissed','1');
 }
+
+// Service Worker 등록 (자동 업데이트)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').then(function(reg){
+      // 새 버전 감지 시 자동 업데이트
+      reg.addEventListener('updatefound', function(){
+        var newWorker = reg.installing;
+        newWorker.addEventListener('statechange', function(){
+          if(newWorker.state==='installed' && navigator.serviceWorker.controller){
+            toast('🔄 새 버전이 있어요! 앱을 껐다 켜주세요');
+          }
+        });
+      });
+    });
+  });
+}
 </script>
 </body>
 </html>
