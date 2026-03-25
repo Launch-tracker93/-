@@ -710,16 +710,32 @@ function renderCal(){
     if(calY===now.getFullYear()&&calM===now.getMonth()&&d===now.getDate()) e.classList.add('today');
     if(r){
       e.classList.add('has');
-      const dot=document.createElement('div'); dot.className='cdot';
       const tgt=TARGET;
-      if(r.leaveType==='annual') dot.classList.add('annual');
-      else if(r.leaveType==='quarter') dot.classList.add('quarter');
-      else if(r.leaveType==='half_am') dot.classList.add('half-am');
-      else if(r.leaveType==='half_pm') dot.classList.add('half-pm');
-      else if(r.leaveType==='half_q')  dot.classList.add('half-q');
-      else if(r.netSec>=tgt) dot.classList.add('ot');
-      else dot.classList.add('inc');
-      e.appendChild(dot);
+      const isHalfDay = (r.leaveType==='half_am'||r.leaveType==='half_pm'||r.leaveType==='quarter'||r.leaveType==='half_q');
+
+      if(r.leaveType==='annual'){
+        // 연차: 점 1개 (연차색)
+        const dot=document.createElement('div'); dot.className='cdot annual';
+        e.appendChild(dot);
+      } else if(isHalfDay){
+        // 반차/반반차: 점 2개 (근무상태 + 휴가색)
+        const dotWrap=document.createElement('div');
+        dotWrap.style.cssText='display:flex;gap:2px;align-items:center;justify-content:center;';
+        const dot1=document.createElement('div'); dot1.className='cdot';
+        dot1.classList.add(r.netSec>=tgt?'ot':(r.netSec>=tgt*0.99?'ot':'inc'));
+        const dot2=document.createElement('div'); dot2.className='cdot';
+        if(r.leaveType==='half_am') dot2.classList.add('half-am');
+        else if(r.leaveType==='half_pm') dot2.classList.add('half-pm');
+        else if(r.leaveType==='quarter') dot2.classList.add('quarter');
+        else if(r.leaveType==='half_q')  dot2.classList.add('half-q');
+        dotWrap.appendChild(dot1); dotWrap.appendChild(dot2);
+        e.appendChild(dotWrap);
+      } else {
+        // 일반: 점 1개 (초과/완료/미달)
+        const dot=document.createElement('div'); dot.className='cdot';
+        dot.classList.add(r.netSec>=tgt?'ot':'inc');
+        e.appendChild(dot);
+      }
       const cfg=LCFG[r.leaveType||'work'];
       e.title=r.isLeave?((cfg&&cfg.label)||'휴가'):hms(r.netSec)+' 근무';
       e.onclick=()=>{sw('history');setTimeout(()=>{const el=document.getElementById('hr-'+ds);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},80);};
