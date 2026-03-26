@@ -157,6 +157,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .cnav{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:15px;transition:all .15s;}
 .cnav:hover{color:var(--text);border-color:var(--accent);}
+.cnav-active{background:rgba(91,82,240,.15)!important;color:var(--accent)!important;border-color:var(--accent)!important;}
 .ctitle{font-size:15px;font-weight:700;}
 .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
 .cdow{text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:4px 0 8px;}
@@ -809,8 +810,8 @@ function renderHist(){
   const isRange  = (histY==='range');
 
   // 버튼 스타일 초기화
-  allBtn.style.background=''; allBtn.style.color=''; allBtn.style.borderColor='';
-  rangeBtn.style.background=''; rangeBtn.style.color=''; rangeBtn.style.borderColor='';
+  allBtn.classList.remove('cnav-active');
+  rangeBtn.classList.remove('cnav-active');
 
   // 내보내기 버튼 라벨
   var exportLabel = document.getElementById('exportBtnLabel');
@@ -820,15 +821,11 @@ function renderHist(){
 
   if(isAll){
     titleEl.textContent='전체 기록 ▾';
-    allBtn.style.background='rgba(91,82,240,.15)';
-    allBtn.style.color='var(--accent)';
-    allBtn.style.borderColor='var(--accent)';
+    allBtn.classList.add('cnav-active');
   } else if(isRange){
     var s=histRangeStart, e=histRangeEnd;
     titleEl.textContent=s.slice(5).replace('-','/')+'~'+e.slice(5).replace('-','/') + ' ▾';
-    rangeBtn.style.background='rgba(91,82,240,.15)';
-    rangeBtn.style.color='var(--accent)';
-    rangeBtn.style.borderColor='var(--accent)';
+    rangeBtn.classList.add('cnav-active');
   } else {
     titleEl.textContent=histY+'년 '+(histM+1)+'월 ▾';
   }
