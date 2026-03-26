@@ -165,7 +165,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .cday.today{background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-weight:700;}
 .cday.dim{opacity:.2;}
 .cdot{width:5px;height:5px;border-radius:50%;background:var(--green);}
-.cdot.ot{background:var(--accent2);}.cdot.inc{background:var(--yellow);}
+.cdot.ot{background:var(--accent2);}.cdot.ok{background:var(--green);}.cdot.inc{background:var(--yellow);}
 .cdot.annual{background:var(--leave);}
 .cdot.half-am{background:#60a5fa;}
 .cdot.half-pm{background:#818cf8;}
@@ -368,8 +368,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <span><i class="ldot" style="background:#818cf8"></i>오후반차</span>
       <span><i class="ldot" style="background:#f472b6"></i>반반차</span>
       <span><i class="ldot" style="background:#a78bfa"></i>반차+반반차</span>
-    </div>
-  </div><!-- /calendar -->
+    </div>  </div><!-- /calendar -->
 
   <!-- ══════════════════ HISTORY TAB ══════════════════ -->
   <div id="tab-history" class="tab-content">
@@ -382,6 +381,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div style="flex:1;text-align:center;font-size:14px;font-weight:700;cursor:pointer;" id="histMonthTitle" onclick="toggleMonthPicker()"></div>
       <button class="cnav" onclick="histMonthMove(1)">›</button>
       <button class="cnav" onclick="histMonthAll()" id="histAllBtn" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">전체</button>
+      <button class="cnav" onclick="openRangePicker()" id="histRangeBtn" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">기간</button>
     </div>
     <!-- 년/월 피커 -->
     <div id="monthPicker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
@@ -391,6 +391,24 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <button class="cnav" onclick="pickerYearMove(1)">›</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;" id="pickerMonthGrid"></div>
+    </div>
+    <!-- 날짜 범위 피커 -->
+    <div id="rangePicker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;">기간 선택</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">시작일</div>
+          <input type="date" class="finput" id="rangeStart" style="font-size:13px;padding:10px;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">종료일</div>
+          <input type="date" class="finput" id="rangeEnd" style="font-size:13px;padding:10px;">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="mbtn mb-cancel" style="flex:1;padding:10px;font-size:13px;" onclick="closeRangePicker()">취소</button>
+        <button class="mbtn mb-save" style="flex:1;padding:10px;font-size:13px;" onclick="applyRange()">적용</button>
+      </div>
     </div>
     <!-- 엑셀 내보내기 -->
     <div class="brow b1" style="margin-bottom:14px;">
@@ -752,7 +770,7 @@ function renderCal(){
         const dotWrap=document.createElement('div');
         dotWrap.style.cssText='display:flex;gap:2px;align-items:center;justify-content:center;';
         const dot1=document.createElement('div'); dot1.className='cdot';
-        dot1.classList.add(r.netSec > tgt ? 'ot' : 'inc');
+        dot1.classList.add(r.netSec > tgt ? 'ot' : r.netSec >= tgt ? 'ok' : 'inc');
         const dot2=document.createElement('div'); dot2.className='cdot';
         if(r.leaveType==='half_am') dot2.classList.add('half-am');
         else if(r.leaveType==='half_pm') dot2.classList.add('half-pm');
@@ -763,7 +781,7 @@ function renderCal(){
       } else {
         // 일반: 점 1개 (초과/완료/미달)
         const dot=document.createElement('div'); dot.className='cdot';
-        dot.classList.add(r.netSec > tgt ? 'ot' : 'inc');
+        dot.classList.add(r.netSec > tgt ? 'ot' : r.netSec >= tgt ? 'ok' : 'inc');
         e.appendChild(dot);
       }
       const cfg=LCFG[r.leaveType||'work'];
@@ -784,39 +802,57 @@ function renderHist(){
   const now = new Date();
   if(histY===null && histM===null){ histY=now.getFullYear(); histM=now.getMonth(); }
 
-  const titleEl = document.getElementById('histMonthTitle');
-  const allBtn  = document.getElementById('histAllBtn');
-  const isAll   = (histY==='all');
+  const titleEl  = document.getElementById('histMonthTitle');
+  const allBtn   = document.getElementById('histAllBtn');
+  const rangeBtn = document.getElementById('histRangeBtn');
+  const isAll    = (histY==='all');
+  const isRange  = (histY==='range');
 
-  // 내보내기 버튼 라벨 업데이트
+  // 버튼 스타일 초기화
+  allBtn.style.background=''; allBtn.style.color=''; allBtn.style.borderColor='';
+  rangeBtn.style.background=''; rangeBtn.style.color=''; rangeBtn.style.borderColor='';
+
+  // 내보내기 버튼 라벨
   var exportLabel = document.getElementById('exportBtnLabel');
-  if(exportLabel) exportLabel.textContent = isAll ? '전체' : histY+'년 '+(histM+1)+'월';
+  if(isAll)        { exportLabel.textContent='전체'; }
+  else if(isRange) { exportLabel.textContent=histRangeStart+'~'+histRangeEnd; }
+  else             { exportLabel.textContent=histY+'년 '+(histM+1)+'월'; }
 
   if(isAll){
     titleEl.textContent='전체 기록 ▾';
     allBtn.style.background='rgba(91,82,240,.15)';
     allBtn.style.color='var(--accent)';
     allBtn.style.borderColor='var(--accent)';
+  } else if(isRange){
+    var s=histRangeStart, e=histRangeEnd;
+    titleEl.textContent=s.slice(5).replace('-','/')+'~'+e.slice(5).replace('-','/') + ' ▾';
+    rangeBtn.style.background='rgba(91,82,240,.15)';
+    rangeBtn.style.color='var(--accent)';
+    rangeBtn.style.borderColor='var(--accent)';
   } else {
     titleEl.textContent=histY+'년 '+(histM+1)+'월 ▾';
-    allBtn.style.background='';
-    allBtn.style.color='';
-    allBtn.style.borderColor='';
   }
 
   const wrap = document.getElementById('hlist');
   let allEntries = Object.entries(S.records).sort(([a],[b])=>b.localeCompare(a));
-  const filtered = isAll ? allEntries : allEntries.filter(([date])=>{
-    const[y,m]=date.split('-').map(Number);
-    return y===histY && m===(histM+1);
-  });
+  const filtered = isAll   ? allEntries
+    : isRange ? allEntries.filter(([date])=> date>=histRangeStart && date<=histRangeEnd)
+    : allEntries.filter(([date])=>{
+        const[y,m]=date.split('-').map(Number);
+        return y===histY && m===(histM+1);
+      });
 
   // 미니 요약 (전체보기가 아닐 때)
   const summEl = document.getElementById('histMiniSummary');
   if(!isAll && filtered.length>0){
     const recs = filtered.map(([,v])=>v);
     const tn  = recs.reduce((a,r)=>a+r.netSec,0);
-    const otS = recs.reduce((a,r)=>a+Math.max(0,r.netSec-TARGET),0);
+    const otS  = recs.reduce((a,r)=>a+Math.max(0,r.netSec-TARGET),0);
+    const incS = recs.reduce((a,r)=>a+Math.max(0,TARGET-r.netSec),0);
+    const diff = otS - incS;
+    const diffTxt = diff===0 ? '±0'
+      : diff>0 ? '<span style="color:var(--red)">+'+hmShort(diff)+'</span>'
+      :          '<span style="color:var(--yellow)">-'+hmShort(-diff)+'</span>';
     const lvCount = recs.reduce(function(a,r){
       if(r.leaveType==='annual')  return a+1;
       if(r.leaveType==='half_am'||r.leaveType==='half_pm') return a+0.5;
@@ -824,15 +860,15 @@ function renderHist(){
       if(r.leaveType==='half_q')  return a+0.75;
       return a;
     },0);
-    const lvTxt = lvCount>0 ? (Number.isInteger(lvCount)?lvCount:lvCount)+'일' : '—';
+    const lvTxt = lvCount>0 ? lvCount+'일' : '—';
     summEl.innerHTML='<div style="display:flex;gap:8px;margin-bottom:12px;">'+
       '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
         '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">총근무</div>'+
         '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;">'+hm(tn)+'</div>'+
       '</div>'+
       '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
-        '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">초과</div>'+
-        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:var(--red);">'+( otS>0?hmShort(otS):'—')+'</div>'+
+        '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">초과/미달</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;">'+diffTxt+'</div>'+
       '</div>'+
       '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
         '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">휴가</div>'+
@@ -842,7 +878,10 @@ function renderHist(){
   } else { summEl.innerHTML=''; }
 
   if(!filtered.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-icon">📋</div>'+(isAll?'아직 근무 기록이 없습니다':( histM+1)+'월 기록이 없습니다')+'</div>';
+    var emptyMsg = isAll?'아직 근무 기록이 없습니다'
+      : isRange?'해당 기간에 기록이 없습니다'
+      : (histM+1)+'월 기록이 없습니다';
+    wrap.innerHTML='<div class="empty"><div class="empty-icon">📋</div>'+emptyMsg+'</div>';
     return;
   }
 
@@ -873,7 +912,7 @@ function renderHist(){
 }
 
 function histMonthMove(dir){
-  if(histY==='all'){ histY=new Date().getFullYear(); histM=new Date().getMonth(); return renderHist(); }
+  if(histY==='all'||histY==='range'){ histY=new Date().getFullYear(); histM=new Date().getMonth(); histRangeStart=null; histRangeEnd=null; return renderHist(); }
   histM+=dir;
   if(histM>11){histM=0;histY++;}
   if(histM<0){histM=11;histY--;}
@@ -882,8 +921,47 @@ function histMonthMove(dir){
 }
 
 function histMonthAll(){
-  histY='all'; histM=null;
+  histY='all'; histM=null; histRangeStart=null; histRangeEnd=null;
   document.getElementById('monthPicker').style.display='none';
+  document.getElementById('rangePicker').style.display='none';
+  renderHist();
+}
+
+// 날짜 범위 필터
+var histRangeStart=null, histRangeEnd=null;
+
+function openRangePicker(){
+  document.getElementById('monthPicker').style.display='none';
+  var rp = document.getElementById('rangePicker');
+  if(rp.style.display==='none'){
+    // 현재 범위가 있으면 그대로, 없으면 이번달 기본값
+    if(histRangeStart){
+      document.getElementById('rangeStart').value = histRangeStart;
+      document.getElementById('rangeEnd').value   = histRangeEnd;
+    } else {
+      var now=new Date();
+      var y=now.getFullYear(), m=pad(now.getMonth()+1);
+      document.getElementById('rangeStart').value = y+'-'+m+'-01';
+      document.getElementById('rangeEnd').value   = y+'-'+m+'-'+pad(new Date(y,now.getMonth()+1,0).getDate());
+    }
+    rp.style.display='';
+  } else {
+    rp.style.display='none';
+  }
+}
+
+function closeRangePicker(){
+  document.getElementById('rangePicker').style.display='none';
+}
+
+function applyRange(){
+  var s = document.getElementById('rangeStart').value;
+  var e = document.getElementById('rangeEnd').value;
+  if(!s||!e){ toast('시작일과 종료일을 모두 선택해주세요'); return; }
+  if(s>e){ toast('종료일이 시작일보다 빠릅니다'); return; }
+  histRangeStart=s; histRangeEnd=e;
+  histY='range'; histM=null;
+  document.getElementById('rangePicker').style.display='none';
   renderHist();
 }
 
