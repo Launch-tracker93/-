@@ -165,16 +165,20 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .cday.has{cursor:pointer;}.cday.has:hover{background:var(--surface2);color:var(--text);}
 .cday.today{background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-weight:700;}
 .cday.dim{opacity:.2;}
+/* 근무 상태 dot — 원형 */
 .cdot{width:5px;height:5px;border-radius:50%;background:var(--green);}
 .cdot.ot{background:var(--accent2);}.cdot.ok{background:var(--green);}.cdot.inc{background:var(--yellow);}
-.cdot.annual{background:var(--leave);}
-.cdot.half-am{background:#60a5fa;}
-.cdot.half-pm{background:#818cf8;}
-.cdot.half-q{background:#a78bfa;}
-.cdot.quarter{background:#f472b6;}
-.clegend{display:flex;gap:12px;justify-content:center;margin-top:12px;font-size:10px;color:var(--text3);}
+/* 휴가 유형 dot — 마름모 */
+.cdot.annual{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:var(--leave);}
+.cdot.half-am{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:#60a5fa;}
+.cdot.half-pm{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:#818cf8;}
+.cdot.half-q{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:#a78bfa;}
+.cdot.quarter{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:#f472b6;}
+/* 범례 */
+.clegend{display:flex;gap:10px;justify-content:center;margin-top:12px;font-size:10px;color:var(--text3);flex-wrap:wrap;}
 .clegend span{display:flex;align-items:center;gap:4px;}
 .ldot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.ldiamond{width:6px;height:6px;border-radius:0;transform:rotate(45deg);display:inline-block;}
 
 /* ── Month cards ── */
 .mcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
@@ -364,11 +368,11 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <span><i class="ldot" style="background:var(--accent2)"></i>초과</span>
       <span><i class="ldot" style="background:var(--green)"></i>완료</span>
       <span><i class="ldot" style="background:var(--yellow)"></i>미달</span>
-      <span><i class="ldot" style="background:var(--leave)"></i>연차</span>
-      <span><i class="ldot" style="background:#60a5fa"></i>오전반차</span>
-      <span><i class="ldot" style="background:#818cf8"></i>오후반차</span>
-      <span><i class="ldot" style="background:#f472b6"></i>반반차</span>
-      <span><i class="ldot" style="background:#a78bfa"></i>반차+반반차</span>
+      <span><i class="ldiamond" style="background:var(--leave)"></i>연차</span>
+      <span><i class="ldiamond" style="background:#60a5fa"></i>오전반차</span>
+      <span><i class="ldiamond" style="background:#818cf8"></i>오후반차</span>
+      <span><i class="ldiamond" style="background:#f472b6"></i>반반차</span>
+      <span><i class="ldiamond" style="background:#a78bfa"></i>반차+반반차</span>
     </div>  </div><!-- /calendar -->
 
   <!-- ══════════════════ HISTORY TAB ══════════════════ -->
