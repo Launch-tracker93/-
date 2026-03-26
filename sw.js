@@ -1,5 +1,5 @@
 // 버전 바꾸면 캐시 자동 갱신
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = 'attendance-' + CACHE_VERSION;
 const FILES = ['/'];
 
