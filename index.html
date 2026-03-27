@@ -220,7 +220,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 /* ── Modal ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:flex-end;justify-content:center;padding:0;}
 .overlay.show{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px calc(36px + env(safe-area-inset-bottom));position:relative;max-height:90vh;overflow-y:auto;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px calc(36px + env(safe-area-inset-bottom));position:relative;max-height:90vh;overflow-y:auto;overflow-x:hidden;}
+input[type="time"], input[type="date"]{-webkit-appearance:none;appearance:none;}
 .modal-title{font-size:15px;font-weight:700;margin-bottom:20px;}
 .mclose{position:absolute;top:20px;right:20px;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
 .mclose:hover{color:var(--text);}
@@ -1170,6 +1171,7 @@ function saveModal(){
     if(outV){ const[h,m]=outV.split(':').map(Number); const d=new Date(dk); d.setHours(h,m,0,0); co=d.getTime(); }
 
     let ns = null;
+    if(ci && co && co <= ci){ toast('퇴근 시간이 출근 시간보다 빠릅니다'); return; }
     if(lv){
       if(ci && co){
         const raw = Math.max(0, Math.floor((co-ci)/1000));
