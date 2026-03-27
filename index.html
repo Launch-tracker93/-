@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>근무 타이머</title>
+
+<!-- iOS PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="근무타이머">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f4f5f7">
+
+<!-- 앱 아이콘 (SVG → canvas로 인라인 생성) -->
+<link rel="apple-touch-icon" id="appIcon">
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  try {
+    var c = document.createElement('canvas');
+    c.width = c.height = 180;
+    var ctx = c.getContext('2d');
+
+    // 둥근 배경
+    ctx.beginPath();
+    ctx.moveTo(36,0); ctx.lineTo(144,0);
+    ctx.quadraticCurveTo(180,0,180,36); ctx.lineTo(180,144);
+    ctx.quadraticCurveTo(180,180,144,180); ctx.lineTo(36,180);
+    ctx.quadraticCurveTo(0,180,0,144); ctx.lineTo(0,36);
+    ctx.quadraticCurveTo(0,0,36,0); ctx.closePath();
+    var grad = ctx.createLinearGradient(0,0,180,180);
+    grad.addColorStop(0,'#f0f1f4');
+    grad.addColorStop(1,'#e2e4ea');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // 링 배경
+    ctx.beginPath();
+    ctx.arc(90,80,42,0,Math.PI*2);
+    ctx.strokeStyle='#2a2a3d'; ctx.lineWidth=8; ctx.stroke();
+
+    // 링 진행
+    ctx.beginPath();
+    ctx.arc(90,80,42,-Math.PI/2, Math.PI*0.8);
+    ctx.strokeStyle='#6c63ff'; ctx.lineWidth=8; ctx.lineCap='round'; ctx.stroke();
+
+    // 이모지
+    ctx.font='36px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('⏱',90,80);
+
+    // 하단 라벨
+    ctx.fillStyle='#6b7280'; ctx.font='bold 15px sans-serif';
+    ctx.fillText('근무타이머',90,148);
+
+    var icon = document.getElementById('appIcon');
+    if(icon) icon.href = c.toDataURL('image/png');
+  } catch(e) { /* 아이콘 생성 실패해도 앱 동작에 무관 */ }
+});
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f5f7;--surface:#ffffff;--surface2:#f0f1f4;--border:#e2e4ea;
+  --accent:#5b52f0;--accent2:#ff4d6d;--green:#16a34a;--yellow:#d97706;
+  --red:#ff4d6d;--text:#1a1a2e;--text2:#6b7280;--text3:#b0b4bf;--leave:#7c3aed;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;
+  /* iOS 노치/홈바 대응 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+/* 텍스트 선택 방지 (앱처럼) */
+body { -webkit-user-select:none; user-select:none; }
+input, textarea { -webkit-user-select:auto; user-select:auto; }
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:.5;z-index:0;}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:24px 16px calc(100px + env(safe-area-inset-bottom));}
+
+/* ── Header ── */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.htitle{font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--text2);}
+.hdate{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);}
+
+/* ── Status badge ── */
+.sbadge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;}
+.sdot{width:6px;height:6px;border-radius:50%;}
+.s-off{background:rgba(255,255,255,.05);color:var(--text2);}.s-off .sdot{background:var(--text3);}
+.s-work{background:rgba(67,233,123,.12);color:var(--green);}.s-work .sdot{background:var(--green);animation:blink 1.8s infinite;}
+.s-leave{background:rgba(167,139,250,.15);color:var(--leave);}.s-leave .sdot{background:var(--leave);}
+.s-done{background:rgba(108,99,255,.15);color:var(--accent);}.s-done .sdot{background:var(--accent);}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.65)}}
+
+/* ── Tabs ── */
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:16px;gap:4px;}
+.tab{flex:1;padding:8px 4px;border-radius:10px;border:none;background:transparent;color:var(--text2);font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.tab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.tab-content{display:none;}.tab-content.active{display:block;}
+
+/* ── Timer card ── */
+.tcard{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px 24px 22px;margin-bottom:14px;position:relative;overflow:hidden;}
+.tcard::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity .3s;}
+.tcard.active::after{opacity:1;}
+.tlabel{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;}
+.tdisp{font-family:'DM Mono',monospace;font-size:54px;font-weight:500;letter-spacing:-2px;line-height:1;margin-bottom:4px;transition:color .3s;color:var(--text);}
+.tdisp.working{color:var(--green);}.tdisp.overtime{color:var(--accent2);}
+.tsub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:18px;}
+.psec{display:flex;align-items:center;gap:20px;padding-top:18px;border-top:1px solid var(--border);}
+.ring-wrap{position:relative;width:68px;height:68px;flex-shrink:0;}
+.rsvg{transform:rotate(-90deg);width:68px;height:68px;}
+.rbg{fill:none;stroke:var(--border);stroke-width:5;}
+.rfill{fill:none;stroke:var(--green);stroke-width:5;stroke-linecap:round;stroke-dasharray:175.9;stroke-dashoffset:175.9;transition:stroke-dashoffset .9s ease,stroke .3s;}
+.rpct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;}
+.pinfo{flex:1;}
+.prow{display:flex;justify-content:space-between;align-items:center;padding:3px 0;}
+.pkey{font-size:11px;color:var(--text2);}
+.pval{font-family:'DM Mono',monospace;font-size:12px;color:var(--text);}
+.pval.ot{color:var(--accent2);}.pval.ok{color:var(--green);}
+
+/* ── OT banner ── */
+.otb{display:none;align-items:center;gap:12px;background:rgba(255,101,132,.08);border:1px solid rgba(255,101,132,.28);border-radius:14px;padding:14px 16px;margin-bottom:14px;}
+.otb.show{display:flex;}
+.otb-icon{font-size:22px;}
+.otb-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);}
+.otb-val{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--red);}
+
+/* ── Leave done card ── */
+.leave-done{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:20px;padding:28px 24px;margin-bottom:14px;text-align:center;}
+.ld-icon{font-size:44px;margin-bottom:10px;}
+.ld-type{font-size:22px;font-weight:700;color:var(--leave);margin-bottom:4px;}
+.ld-sub{font-size:12px;color:var(--text2);}
+
+/* ── Info grid ── */
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.icell{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 14px 12px;}
+.iclbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;}
+.icval{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;}
+.cv-g{color:var(--green);}.cv-r{color:var(--red);}.cv-y{color:var(--yellow);}.cv-a{color:var(--accent);}
+
+/* ── Lunch note ── */
+.lnote{display:flex;align-items:center;gap:8px;background:rgba(249,202,36,.06);border:1px solid rgba(249,202,36,.18);border-radius:10px;padding:9px 14px;margin-bottom:14px;font-size:12px;color:var(--yellow);}
+
+/* ── Buttons ── */
+.brow{display:grid;gap:10px;margin-bottom:14px;}.b1{grid-template-columns:1fr;}.b2{grid-template-columns:1fr 1fr;}
+.btn{padding:16px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:-.02em;}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.15);}
+.btn:active{transform:translateY(0);}
+.btn:disabled{opacity:.3;cursor:not-allowed;transform:none;filter:none;}
+.btn-in{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 8px 24px rgba(108,99,255,.3);}
+.btn-out{background:rgba(255,101,132,.12);border-color:rgba(255,101,132,.32);color:var(--red);}
+.btn-ghost{opacity:.3;cursor:default;}
+.btn-add{background:rgba(108,99,255,.1);border-color:rgba(108,99,255,.3);color:var(--accent);font-size:13px;padding:12px;}
+
+/* ── Calendar ── */
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cnav{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:15px;transition:all .15s;}
+.cnav:hover{color:var(--text);border-color:var(--accent);}
+.cnav-active{background:rgba(91,82,240,.15)!important;color:var(--accent)!important;border-color:var(--accent)!important;}
+.ctitle{font-size:15px;font-weight:700;}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cdow{text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:4px 0 8px;}
+.cday{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--text2);gap:2px;}
+.cday.has{cursor:pointer;}.cday.has:hover{background:var(--surface2);color:var(--text);}
+.cday.today{background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-weight:700;}
+.cday.dim{opacity:.2;}
+/* 근무 상태 dot — 원형 */
+.cdot{width:5px;height:5px;border-radius:50%;background:var(--green);}
+.cdot.ot{background:var(--accent2);}.cdot.ok{background:var(--green);}.cdot.inc{background:var(--yellow);}
+/* 휴가 유형 dot — 마름모 */
+.cdot.annual{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:var(--leave);}
+.cdot.half-am{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:#60a5fa;}
+.cdot.half-pm{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:#818cf8;}
+.cdot.half-q{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:#a78bfa;}
+.cdot.quarter{width:5px;height:5px;border-radius:0;transform:rotate(45deg);background:#f472b6;}
+/* 범례 */
+.clegend{display:flex;gap:10px;justify-content:center;margin-top:12px;font-size:10px;color:var(--text3);flex-wrap:wrap;}
+.clegend span{display:flex;align-items:center;gap:4px;}
+.ldot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.ldiamond{width:6px;height:6px;border-radius:0;transform:rotate(45deg);display:inline-block;}
+
+/* ── Month cards ── */
+.mcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.mcard-title{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);}
+.mrow:last-child{border-bottom:none;}
+.mkey{font-size:12px;color:var(--text2);}
+.mval{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);}
+.gbar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+.gbar-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.gbar-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);}
+.gbar-pct{font-family:'DM Mono',monospace;font-size:13px;color:var(--text);}
+.gbar-track{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;margin-bottom:6px;}
+.gbar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .6s ease;}
+.gbar-sub{font-size:11px;color:var(--text3);text-align:right;}
+
+/* ── History list ── */
+.hlist{display:flex;flex-direction:column;gap:8px;}
+.hitem{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:border-color .15s;}
+.hitem:hover{border-color:rgba(108,99,255,.4);}
+.hdate{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);min-width:44px;}
+.hinfo{flex:1;}
+.htimes{font-size:11px;color:var(--text2);margin-bottom:2px;}
+.htimes b{color:var(--text);font-weight:600;}
+.hdur{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--text);}
+.hot-txt{font-size:11px;color:var(--red);}
+.hact-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.htag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.04em;}
+.t-ot{background:rgba(255,101,132,.12);color:var(--red);}
+.t-ok{background:rgba(67,233,123,.1);color:var(--green);}
+.t-inc{background:rgba(249,202,36,.1);color:var(--yellow);}
+.t-lv{background:rgba(167,139,250,.12);color:var(--leave);}
+.hact{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;}
+.hact:hover{color:var(--text);border-color:var(--accent);}
+.hact.del:hover{color:var(--red);border-color:var(--red);}
+.empty{text-align:center;padding:48px 20px;color:var(--text3);font-size:13px;}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+
+/* ── Modal ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:flex-end;justify-content:center;padding:0;}
+.overlay.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px calc(36px + env(safe-area-inset-bottom));position:relative;max-height:90vh;overflow-y:auto;overflow-x:hidden;}
+input[type="time"], input[type="date"]{-webkit-appearance:none;appearance:none;}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:20px;}
+.mclose{position:absolute;top:20px;right:20px;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
+.mclose:hover{color:var(--text);}
+
+/* ── Form fields ── */
+.field{margin-bottom:16px;}
+.flabel{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:7px;}
+.frow{display:grid;gap:10px;}.fr2{grid-template-columns:1fr 1fr;}
+.finput{width:100%;max-width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:14px;outline:none;transition:border-color .15s;box-sizing:border-box;}
+.finput:focus{border-color:var(--accent);}
+.finput::placeholder{color:var(--text3);}
+.finput:disabled{opacity:.35;cursor:not-allowed;}
+
+/* ── Type chips ── */
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:4px;}
+.chip{padding:10px 2px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;line-height:1.4;}
+.chip:hover{border-color:var(--accent);color:var(--accent);}
+.chip.sel{background:rgba(108,99,255,.15);border-color:var(--accent);color:var(--accent);}
+.chip.lv-sel{background:rgba(167,139,250,.15);border-color:var(--leave);color:var(--leave);}
+.chip.lv-chip{color:var(--text2);border-color:var(--border);}
+
+/* ── Modal action buttons ── */
+.mbtns{display:flex;gap:10px;margin-top:6px;}
+.mbtns .mbtn{flex:1;}
+.mbtn{padding:14px;border-radius:12px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;}
+.mbtn:hover{filter:brightness(1.1);}
+.mb-cancel{background:var(--surface2);color:var(--text2);}
+.mb-save{background:var(--accent);color:#fff;}
+.mb-del{background:rgba(255,77,109,.15);color:var(--red);}
+
+/* ── Leave info box ── */
+.lv-infobox{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);border-radius:10px;padding:12px 14px;margin-bottom:4px;}
+.lv-infobox-row{display:flex;justify-content:space-between;align-items:center;}
+.lv-infobox-key{font-size:12px;color:var(--text2);}
+.lv-infobox-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--leave);}
+
+/* ── iOS 홈 화면 추가 안내 ── */
+.pwa-banner{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:800;background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:12px 16px 12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:340px;width:calc(100% - 32px);}
+.pwa-banner-text{flex:1;font-size:12px;color:var(--text2);line-height:1.5;}
+.pwa-banner-text b{color:var(--text);display:block;margin-bottom:2px;}
+.pwa-banner-close{width:24px;height:24px;border-radius:6px;border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.pwa-arrow{font-size:20px;flex-shrink:0;}
+.twrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
+.toast{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tin .22s ease,tout .3s ease 1.8s forwards;}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tout{to{opacity:0;transform:translateY(-4px)}}
+
+/* ── Section label ── */
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="htitle">⏱ 근무 타이머</div>
+    <div class="hdate" id="hdrDate"></div>
+  </div>
+
+  <div class="sbadge s-off" id="sbadge"><div class="sdot"></div><span id="stext">미출근</span></div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="sw('today')">오늘</button>
+    <button class="tab" onclick="sw('calendar')">달력</button>
+    <button class="tab" onclick="sw('history')">기록</button>
+  </div>
+
+  <!-- ══════════════════ TODAY TAB ══════════════════ -->
+  <div id="tab-today" class="tab-content active">
+
+    <!-- Lunch note -->
+    <div class="lnote" id="lunchNote">🍱 점심시간 <strong style="margin:0 4px">12:00~13:00</strong> 자동 차감</div>
+
+    <!-- Leave done display -->
+    <div id="leaveDone" style="display:none"></div>
+
+    <!-- Timer card -->
+    <div class="tcard" id="tcardEl" style="display:none">
+      <div class="tlabel" id="tlabel">총 경과시간 (점심 포함)</div>
+      <div class="tdisp" id="tdisp">00:00:00</div>
+      <div class="tsub"  id="tsub">출근하지 않았습니다</div>
+      <div class="psec">
+        <div class="ring-wrap">
+          <svg class="rsvg" viewBox="0 0 68 68">
+            <circle class="rbg"   cx="34" cy="34" r="28"/>
+            <circle class="rfill" id="rfill" cx="34" cy="34" r="28"/>
+          </svg>
+          <div class="rpct" id="rpct">0%</div>
+        </div>
+        <div class="pinfo">
+          <div class="prow"><div class="pkey">목표</div>      <div class="pval">08:00:00</div></div>
+          <div class="prow"><div class="pkey">남은시간</div>  <div class="pval" id="pRem">—</div></div>
+          <div class="prow"><div class="pkey">초과근무</div>  <div class="pval ot" id="pOT">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OT banner -->
+    <div class="otb" id="otb">
+      <div class="otb-icon">🔥</div>
+      <div><div class="otb-lbl">초과 근무 중</div><div class="otb-val" id="otbval">00:00:00</div></div>
+    </div>
+
+    <!-- Info grid (shown while working or done-work) -->
+    <div class="igrid" id="infoGrid" style="display:none">
+      <div class="icell"><div class="iclbl">출근시간</div><div class="icval cv-g" id="iIn">—</div></div>
+      <div class="icell"><div class="iclbl">퇴근시간</div><div class="icval cv-r" id="iOut">—</div></div>
+      <div class="icell" style="grid-column:span 2;">
+        <div class="iclbl">순 근무시간 (점심 1시간 제외)</div>
+        <div class="icval cv-a" id="iNet" style="font-size:24px;">—</div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div id="bIn"   class="brow b1"><button class="btn btn-in"  onclick="doIn()">🟢 출근하기</button></div>
+    <div id="bOut"  class="brow b1" style="display:none"><button class="btn btn-out" onclick="doOut()">🔴 퇴근하기</button></div>
+    <div id="bDone" class="brow b1" style="display:none"><button class="btn btn-ghost" disabled>완료</button></div>
+
+  </div><!-- /today -->
+
+  <!-- ══════════════════ CALENDAR TAB ══════════════════ -->
+  <div id="tab-calendar" class="tab-content">
+    <!-- 연차 현황 카드 -->
+    <div id="leaveCard" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:16px;">🏖</span>
+          <span style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);">연차 현황</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px;">
+          <span id="leaveRemain" style="font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--accent);">—</span>
+          <span style="font-size:12px;color:var(--text2);">일 남음</span>
+          <span style="font-size:11px;color:var(--text3);" id="leaveUsed"></span>
+        </div>
+        <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">🍱</span>
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:2px;">점심시간</div>
+            <span id="lunchTimeDisplay" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);">12:00~13:00</span>
+          </div>
+        </div>
+      </div>
+      <button onclick="openLeaveSettings()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;flex-shrink:0;">설정</button>
+    </div>
+    <div class="gbar-wrap" id="gbarWrap"></div>
+    <div class="mcard" id="mcard"></div>
+    <div class="cal-hdr">
+      <button class="cnav" onclick="calMove(-1)">‹</button>
+      <div class="ctitle" id="ctitle"></div>
+      <button class="cnav" onclick="calMove(1)">›</button>
+    </div>
+    <div class="cgrid" id="cgrid"></div>
+    <div class="clegend">
+      <span><i class="ldot" style="background:var(--accent2)"></i>초과</span>
+      <span><i class="ldot" style="background:var(--green)"></i>완료</span>
+      <span><i class="ldot" style="background:var(--yellow)"></i>미달</span>
+      <span><i class="ldiamond" style="background:var(--leave)"></i>연차</span>
+      <span><i class="ldiamond" style="background:#60a5fa"></i>오전반차</span>
+      <span><i class="ldiamond" style="background:#818cf8"></i>오후반차</span>
+      <span><i class="ldiamond" style="background:#f472b6"></i>반반차</span>
+      <span><i class="ldiamond" style="background:#a78bfa"></i>반차+반반차</span>
+    </div>  </div><!-- /calendar -->
+
+  <!-- ══════════════════ HISTORY TAB ══════════════════ -->
+  <div id="tab-history" class="tab-content">
+    <div class="brow b1" style="margin-bottom:10px;">
+      <button class="btn btn-add" onclick="openModal(null)">＋ 기록 추가 / 휴가 등록</button>
+    </div>
+    <!-- 월 필터 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <button class="cnav" onclick="histMonthMove(-1)">‹</button>
+      <div style="flex:1;text-align:center;font-size:14px;font-weight:700;cursor:pointer;" id="histMonthTitle" onclick="toggleMonthPicker()"></div>
+      <button class="cnav" onclick="histMonthMove(1)">›</button>
+      <button class="cnav" onclick="histMonthAll()" id="histAllBtn" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">전체</button>
+      <button class="cnav" onclick="openRangePicker()" id="histRangeBtn" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">기간</button>
+    </div>
+    <!-- 년/월 피커 -->
+    <div id="monthPicker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <button class="cnav" onclick="pickerYearMove(-1)">‹</button>
+        <div style="font-size:15px;font-weight:700;" id="pickerYearTitle"></div>
+        <button class="cnav" onclick="pickerYearMove(1)">›</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;" id="pickerMonthGrid"></div>
+    </div>
+    <!-- 날짜 범위 피커 -->
+    <div id="rangePicker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">기간 선택</div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">시작일</div>
+        <div style="display:flex;gap:6px;">
+          <select id="rsY" style="flex:2;padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;"></select>
+          <select id="rsM" style="flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;"></select>
+          <select id="rsD" style="flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;"></select>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">종료일</div>
+        <div style="display:flex;gap:6px;">
+          <select id="reY" style="flex:2;padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;"></select>
+          <select id="reM" style="flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;"></select>
+          <select id="reD" style="flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;"></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="mbtn mb-cancel" style="flex:1;padding:10px;font-size:13px;" onclick="closeRangePicker()">취소</button>
+        <button class="mbtn mb-save" style="flex:1;padding:10px;font-size:13px;" onclick="applyRange()">적용</button>
+      </div>
+    </div>
+    <!-- 엑셀 내보내기 -->
+    <div class="brow b1" style="margin-bottom:14px;">
+      <button class="btn" style="background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);color:var(--green);font-size:13px;padding:12px;" onclick="exportXLSX()">📊 <span id="exportBtnLabel">이번 달</span> CSV 내보내기</button>
+    </div>
+    <!-- 월 요약 미니 -->
+    <div id="histMiniSummary"></div>
+    <div id="hlist" class="hlist"></div>
+  </div><!-- /history -->
+
+</div><!-- /app -->
+
+<!-- ══════════════════ MODAL ══════════════════ -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+<div class="modal">
+  <div class="modal-title" id="mTitle">기록 추가</div>
+  <button class="mclose" onclick="closeModal()">✕</button>
+
+  <!-- Date -->
+  <div class="field">
+    <div class="flabel">날짜</div>
+    <input type="date" class="finput" id="mDate">
+  </div>
+
+  <!-- Type chips -->
+  <div class="field">
+    <div class="flabel">근무 유형</div>
+    <div class="chips" style="grid-template-columns:repeat(3,1fr);">
+      <button class="chip" id="ch-work"    onclick="selType('work')">💼<br>일반</button>
+      <button class="chip lv-chip" id="ch-half_am" onclick="selType('half_am')">🌅<br>오전반차</button>
+      <button class="chip lv-chip" id="ch-half_pm" onclick="selType('half_pm')">🌇<br>오후반차</button>
+      <button class="chip lv-chip" id="ch-quarter"  onclick="selType('quarter')">⏰<br>반반차</button>
+      <button class="chip lv-chip" id="ch-half_q"   onclick="selType('half_q')">🌗<br>반차+반반차</button>
+      <button class="chip lv-chip" id="ch-annual"   onclick="selType('annual')">🏖<br>연차</button>
+    </div>
+  </div>
+
+  <!-- Leave info box -->
+  <div id="mLeaveInfo" style="display:none" class="field">
+    <div class="lv-infobox" id="mLeaveInfoBox"></div>
+  </div>
+
+  <!-- Work fields (일반 근무 + 반차/반반차 모두 표시) -->
+  <div id="mWorkFields">
+    <div class="field">
+      <div class="flabel">출근 시간 / 퇴근 시간</div>
+      <div class="frow fr2">
+        <input type="time" class="finput" id="mIn"  placeholder="09:00">
+        <input type="time" class="finput" id="mOut" placeholder="18:00">
+      </div>
+    </div>
+    <div class="field" id="mNetField">
+      <div class="flabel">순 근무시간 직접 입력 <span style="color:var(--text3);font-size:9px;letter-spacing:0;text-transform:none">(비우면 자동 계산)</span></div>
+      <input type="text" class="finput" id="mNet" placeholder="예: 7:30 · 7h30m · 7.5">
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="mbtns" id="mBtns">
+    <button class="mbtn mb-del" id="mBtnDel" onclick="modalDelete()" style="display:none">삭제</button>
+    <button class="mbtn mb-cancel" onclick="closeModal()">취소</button>
+    <button class="mbtn mb-save" onclick="saveModal()">저장</button>
+  </div>
+</div>
+</div>
+
+<div class="twrap" id="twrap"></div>
+
+<!-- 연차 설정 모달 -->
+<div class="overlay" id="leaveOverlay" onclick="leaveOverlayClick(event)">
+<div class="modal">
+  <div class="modal-title">설정</div>
+  <button class="mclose" onclick="closeLeaveSettings()">✕</button>
+  <div class="field">
+    <div class="flabel">총 연차 일수</div>
+    <input type="number" class="finput" id="totalLeaveInput" min="0" max="365" step="0.5" placeholder="예: 15">
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:16px;">반차=0.5일, 반반차=0.25일, 반차+반반차=0.75일로 계산됩니다</div>
+  <div class="field">
+    <div class="flabel">점심시간대</div>
+    <div class="frow fr2">
+      <input type="time" class="finput" id="lunchStartInput" placeholder="12:00">
+      <input type="time" class="finput" id="lunchEndInput" placeholder="13:00">
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:16px;">출퇴근 시간이 이 시간대를 포함하면 자동으로 1시간 차감됩니다</div>
+  <div class="mbtns m2">
+    <button class="mbtn mb-cancel" onclick="closeLeaveSettings()">취소</button>
+    <button class="mbtn mb-save" onclick="saveLeaveSettings()">저장</button>
+  </div>
+</div>
+</div>
+
+<!-- iOS 홈 화면 추가 안내 배너 -->
+<div class="pwa-banner" id="pwaBanner" style="display:none">
+  <div class="pwa-arrow">📲</div>
+  <div class="pwa-banner-text">
+    <b>홈 화면에 추가하면 앱처럼 사용 가능!</b>
+    Safari 하단 <b>공유 버튼 →</b> "홈 화면에 추가"
+  </div>
+  <button class="pwa-banner-close" onclick="dismissPWA()">✕</button>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────────────────
+const TARGET=8*3600, LUNCH=3600, CIRC=175.9, KEY='tc_v5';
+
+// fixedSec: 휴가로 인정되는 시간 (실근무 + fixedSec = 8h 목표)
+// 반차(4h): 실근무 4h + 고정 4h = 8h
+// 반반차(2h): 실근무 6h + 고정 2h = 8h
+// 반차+반반차(6h): 실근무 2h + 고정 6h = 8h
+const LCFG = {
+  work:    {label:'일반 근무',     icon:'💼', netSec:null,   fixedSec:0      },
+  half_am: {label:'오전 반차',     icon:'🌅', netSec:null,   fixedSec:4*3600 },
+  half_pm: {label:'오후 반차',     icon:'🌇', netSec:null,   fixedSec:4*3600 },
+  quarter: {label:'반반차',        icon:'⏰', netSec:null,   fixedSec:2*3600 },
+  half_q:  {label:'반차+반반차',   icon:'🌗', netSec:null,   fixedSec:6*3600 },
+  annual:  {label:'연차',          icon:'🏖', netSec:8*3600, fixedSec:8*3600 },
+};
+
+// ── 근무시간 계산 최종 ──
+// 모든 유형의 목표 = 8h
+// netSec = 실근무 + 휴가고정시간
+// 반차(오전/오후): 점심없이 퇴근 → raw + 4h
+// 반반차: 점심1h 차감 후 raw + 2h
+// 반차+반반차: 점심1h 차감 후 raw + 6h
+// 일반: 점심1h 차감
+// 연차: 8h 고정 (초과 아님)
+// 점심시간대 포함 여부 판단
+function isLunchIncluded(ci, co){
+  if(!ci || !co) return false;
+  var ls = (S&&S.lunchStart)||'12:00', le = (S&&S.lunchEnd)||'13:00';
+  var lsH=+ls.split(':')[0], lsM=+ls.split(':')[1];
+  var leH=+le.split(':')[0], leM=+le.split(':')[1];
+  var ciD=new Date(ci);
+  var lsTs=new Date(ciD); lsTs.setHours(lsH,lsM,0,0);
+  var leTs=new Date(ciD); leTs.setHours(leH,leM,0,0);
+  return ci < leTs.getTime() && co > lsTs.getTime();
+}
+
+function calcNet(ci, co, lt){
+  const cfg = LCFG[lt||'work'];
+  if(lt==='annual') return 8*3600;
+  const end = co || Date.now();
+  const raw = Math.floor((end - ci) / 1000);
+  const noLunch = (lt==='half_am'||lt==='half_pm'||lt==='half_q');
+  if(noLunch) return Math.max(0, raw) + (cfg.fixedSec||0);
+  const deduct = isLunchIncluded(ci, co||Date.now()) ? LUNCH : 0;
+  return Math.max(0, raw - deduct) + (cfg.fixedSec||0);
+}
+
+function getTarget(){ return TARGET; }
+
+// ─────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────
+let S = (()=>{ try{return JSON.parse(localStorage.getItem(KEY))||blank();}catch{return blank();} })();
+let ticker=null, calY, calM, mCurType='work', mEditKey=null;
+let histY=null, histM=null; // null = 전체보기
+let histRangeStart=null, histRangeEnd=null;
+
+function blank(){ return {status:'off',checkIn:null,checkOut:null,leaveType:'work',records:{},totalLeave:15,lunchStart:'12:00',lunchEnd:'13:00'}; }
+function save(){ localStorage.setItem(KEY,JSON.stringify(S)); }
+
+// ─────────────────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────────────────
+function pad(n){ return String(n).padStart(2,'0'); }
+function todayKey(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function hms(s){ s=Math.max(0,s); return `${pad(Math.floor(s/3600))}:${pad(Math.floor(s%3600/60))}:${pad(s%60)}`; }
+function hm(s){
+  s=Math.max(0,s);
+  const h=Math.floor(s/3600), m=Math.floor(s%3600/60);
+  return h?(m?`${h}시간 ${m}분`:`${h}시간`):(m?`${m}분`:'0분');
+}
+// 초과근무 표시용 — 분 단위까지만 (초 생략)
+function hmShort(s){
+  s=Math.max(0,s);
+  const h=Math.floor(s/3600), m=Math.floor(s%3600/60);
+  if(h===0) return m+'분';
+  if(m===0) return h+'시간';
+  return h+'시간 '+m+'분';
+}
+function fts(ts){ if(!ts)return'—'; const d=new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function isLeave(lt){ return lt && lt!=='work'; }
+function isAnnual(lt){ return lt==='annual'; }
+function isHalf(lt){ return lt==='half_am'||lt==='half_pm'||lt==='quarter'||lt==='half_q'; }
+
+function parseNetStr(str){
+  if(!str||!str.trim()) return null;
+  str=str.trim();
+  let m;
+  if((m=str.match(/^(\d+):(\d+)$/)))      return +m[1]*3600 + +m[2]*60;
+  if((m=str.match(/^(\d+)h(\d+)m?$/i)))   return +m[1]*3600 + +m[2]*60;
+  if((m=str.match(/^(\d+)h$/i)))           return +m[1]*3600;
+  if((m=str.match(/^(\d+)m$/i)))           return +m[1]*60;
+  if((m=str.match(/^(\d+\.?\d*)$/)))       return Math.round(parseFloat(m[1])*3600);
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────
+//  TODAY ACTIONS
+// ─────────────────────────────────────────────────────────
+function doIn(){
+  S.status='working'; S.checkIn=Date.now(); S.checkOut=null; S.leaveType='work';
+  save(); toast('🟢 출근 완료! 오늘도 화이팅!'); render(); startTick();
+}
+function doOut(){
+  S.checkOut=Date.now(); S.status='done';
+  const lt=S.leaveType||'work';
+  const n=calcNet(S.checkIn,S.checkOut,lt);
+  S.records[todayKey()]={checkIn:S.checkIn,checkOut:S.checkOut,leaveType:lt,netSec:n,isLeave:isLeave(lt)};
+  save(); stopTick(); toast('👋 퇴근 완료! 수고하셨습니다!'); render();
+}
+
+// ─────────────────────────────────────────────────────────
+//  TIMER
+// ─────────────────────────────────────────────────────────
+function startTick(){ stopTick(); ticker=setInterval(tick,1000); tick(); }
+function stopTick(){ clearInterval(ticker); ticker=null; }
+function tick(){ if(S.status!=='working'){stopTick();return;} updateTimerUI(calcNet(S.checkIn,null,S.leaveType||'work')); }
+
+function updateTimerUI(n){
+  const lt    = S.leaveType || 'work';
+  const tgt   = TARGET;
+  const endTs = S.checkOut || Date.now();
+  const raw   = S.checkIn ? Math.floor((endTs-S.checkIn)/1000) : 0;
+  const isOT  = n >= tgt;
+  const ot    = Math.max(0, n - tgt);
+  const alive = S.status==='working';
+
+  // 큰 숫자 = 총 경과시간 (점심 포함)
+  document.getElementById('tdisp').textContent = hms(raw);
+  document.getElementById('tdisp').className   = 'tdisp'+(alive?(isOT?' overtime':' working'):'');
+  document.getElementById('tlabel').textContent= S.status==='done'?'총 경과시간 (점심 포함)':'총 경과시간 (점심 포함)';
+
+  const rawTgt = tgt + LUNCH; // 총경과 기준 목표 = 9h
+  const sub=document.getElementById('tsub');
+  if(!S.checkIn)             sub.textContent='출근하지 않았습니다';
+  else if(S.status==='done') sub.textContent=isOT?`초과 ${hm(ot)}`:(n>=tgt*0.99?'목표 달성 ✓':`목표까지 ${hm(tgt-n)} 미달`);
+  else if(isOT)              sub.textContent=`목표 달성 🎉  +${hm(ot)} 초과 중`;
+  else                       sub.textContent=`목표까지 ${hm(rawTgt-raw)} 남음`;
+
+  // 링 진행률 = 순근무 기준
+  const pct=Math.min(n/tgt,1);
+  document.getElementById('rfill').style.strokeDashoffset=CIRC*(1-pct);
+  document.getElementById('rfill').style.stroke=isOT?'var(--accent2)':'var(--green)';
+  document.getElementById('rpct').textContent=Math.round(pct*100)+'%';
+  document.getElementById('pRem').textContent =!S.checkIn?'—':isOT?'완료 ✓':hms(Math.max(0,rawTgt-raw));
+  document.getElementById('pRem').className   ='pval'+(isOT?' ok':'');
+  document.getElementById('pOT').textContent  =isOT?'+'+hms(ot):'—';
+  document.getElementById('otb').classList.toggle('show',isOT&&!!S.checkIn&&S.status!=='off');
+  document.getElementById('otbval').textContent=hms(ot);
+  // 순 근무시간 = info grid
+  document.getElementById('iNet').textContent = S.checkIn?hms(n):'—';
+}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────────────────
+function render(){
+  const now=new Date(), days=['일','월','화','수','목','금','토'];
+  document.getElementById('hdrDate').textContent=`${now.getMonth()+1}/${now.getDate()} (${days[now.getDay()]})`;
+
+  // badge
+  const rec=S.records[todayKey()];
+  const lt=rec?rec.leaveType:(S.leaveType||'work');
+  const lv=rec?rec.isLeave:false;
+  const off=S.status==='off', working=S.status==='working', done=S.status==='done';
+  const doneLv   = done && lt==='annual';
+  const doneWork = done && lt!=='annual';
+  const sb=document.getElementById('sbadge');
+  sb.className='sbadge '+({off:'s-off',working:'s-work',done:doneLv?'s-leave':'s-done'}[S.status]||'s-off');
+  document.getElementById('stext').textContent=
+    S.status==='off'?'미출근':
+    S.status==='working'?'근무중':
+    (doneLv?((LCFG[lt]&&LCFG[lt].label)||'연차'):'퇴근완료');
+
+  // lunch note
+  var lnEl = document.getElementById('lunchNote');
+  if(lnEl){
+    lnEl.innerHTML='🍱 점심시간 <strong style="margin:0 4px">'+(S.lunchStart||'12:00')+'~'+(S.lunchEnd||'13:00')+'</strong> 자동 차감';
+    lnEl.style.display = doneLv ? 'none' : '';
+  }
+
+  // leave done card
+  const ldEl=document.getElementById('leaveDone');
+  if(doneLv){
+    const cfg=LCFG[lt]||{icon:'🏖',label:'휴가',netSec:8*3600};
+    ldEl.innerHTML=`<div class="leave-done"><div class="ld-icon">${cfg.icon}</div><div class="ld-type">${cfg.label}</div><div class="ld-sub">근무시간 ${hm(cfg.netSec)} 인정됨</div></div>`;
+    ldEl.style.display='';
+  } else { ldEl.style.display='none'; }
+
+  // timer card
+  document.getElementById('tcardEl').style.display =working||doneWork?'':'none';
+  document.getElementById('tcardEl').classList.toggle('active',working);
+  document.getElementById('infoGrid').style.display=working||doneWork?'':'none';
+  document.getElementById('iIn').textContent =fts(S.checkIn);
+  document.getElementById('iOut').textContent=fts(S.checkOut);
+
+  // buttons — done이어도 오늘 records가 없으면 출근 가능 (날짜 바뀐 엣지케이스 대비)
+  const todayHasRecord = !!S.records[todayKey()];
+  const canCheckIn = off || (done && !todayHasRecord);
+  document.getElementById('bIn').style.display  = canCheckIn ? '' : 'none';
+  document.getElementById('bOut').style.display = working    ? '' : 'none';
+  document.getElementById('bDone').style.display= (done && todayHasRecord) ? '' : 'none';
+
+  // timer update
+  if(doneWork){ const r=S.records[todayKey()]; if(r) updateTimerUI(r.netSec); }
+  else if(working){ if(!ticker)startTick(); else tick(); }
+  else updateTimerUI(0);
+}
+
+// ─────────────────────────────────────────────────────────
+//  TABS
+// ─────────────────────────────────────────────────────────
+function sw(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['today','calendar','history'][i]===name));
+  document.querySelectorAll('.tab-content').forEach(tc=>tc.classList.toggle('active',tc.id==='tab-'+name));
+  if(name==='calendar')renderCal();
+  if(name==='history') renderHist();
+}
+
+// ─────────────────────────────────────────────────────────
+//  CALENDAR
+// ─────────────────────────────────────────────────────────
+function renderCal(){
+  const now=new Date();
+  if(calY==null){calY=now.getFullYear();calM=now.getMonth();}
+  document.getElementById('ctitle').textContent=`${calY}년 ${calM+1}월`;
+
+  const prefix=`${calY}-${pad(calM+1)}`;
+  const recs=Object.entries(S.records).filter(([k])=>k.startsWith(prefix)).map(([,v])=>v);
+  const wd=recs.length;
+  const tn=recs.reduce((a,r)=>a+r.netSec,0);
+  const mt=wd*TARGET; // 날별 목표 항상 8h
+  const otS=recs.reduce((a,r)=>a+Math.max(0,r.netSec-TARGET),0);
+  const incS=recs.reduce((a,r)=>a+Math.max(0,TARGET-r.netSec),0);
+  const gp=mt>0?Math.min(tn/mt*100,100):0;
+  const diffTxt = tn>=mt
+    ? (otS>0?'<span style="color:var(--red)">+'+hmShort(otS)+' 초과</span>':'목표 달성 ✓')
+    : '<span style="color:var(--yellow)">-'+hmShort(incS)+' 미달</span>';
+
+  document.getElementById('gbarWrap').innerHTML=`
+    <div class="gbar-hdr"><div class="gbar-title">이번 달 목표 달성률</div><div class="gbar-pct">${gp.toFixed(1)}%</div></div>
+    <div class="gbar-track"><div class="gbar-fill" style="width:${gp}%"></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+      <div class="gbar-sub">${hm(tn)} / ${hm(mt)}</div>
+      <div style="font-size:11px;font-weight:600;">${wd>0?diffTxt:''}</div>
+    </div>`;
+
+  const lvCount = recs.reduce(function(a,r){
+    if(r.leaveType==='annual')  return a+1;
+    if(r.leaveType==='half_am'||r.leaveType==='half_pm') return a+0.5;
+    if(r.leaveType==='quarter') return a+0.25;
+    if(r.leaveType==='half_q')  return a+0.75;
+    return a;
+  },0);
+
+  document.getElementById('mcard').innerHTML=`
+    <div class="mcard-title">${calM+1}월 요약</div>
+    <div class="mrow"><div class="mkey">근무일수</div><div class="mval">${wd}일</div></div>
+    <div class="mrow"><div class="mkey">총 근무시간</div><div class="mval">${hm(tn)}</div></div>
+    <div class="mrow"><div class="mkey">총 초과근무</div><div class="mval" style="color:var(--red)">${otS>0?hmShort(otS):'—'}</div></div>
+    <div class="mrow"><div class="mkey">휴가</div><div class="mval" style="color:var(--leave)">${lvCount>0?lvCount+'일':'—'}</div></div>`;
+
+  const grid=document.getElementById('cgrid'); grid.innerHTML='';
+  ['일','월','화','수','목','금','토'].forEach(d=>{const e=document.createElement('div');e.className='cdow';e.textContent=d;grid.appendChild(e);});
+  const fd=new Date(calY,calM,1).getDay(), dim=new Date(calY,calM+1,0).getDate(), pd=new Date(calY,calM,0).getDate();
+  for(let i=fd-1;i>=0;i--){const e=document.createElement('div');e.className='cday dim';e.textContent=pd-i;grid.appendChild(e);}
+  for(let d=1;d<=dim;d++){
+    const ds=`${calY}-${pad(calM+1)}-${pad(d)}`, r=S.records[ds];
+    const e=document.createElement('div'); e.className='cday'; e.textContent=d;
+    if(calY===now.getFullYear()&&calM===now.getMonth()&&d===now.getDate()) e.classList.add('today');
+    if(r){
+      e.classList.add('has');
+      const tgt=TARGET;
+      const isHalfDay = (r.leaveType==='half_am'||r.leaveType==='half_pm'||r.leaveType==='quarter'||r.leaveType==='half_q');
+
+      if(r.leaveType==='annual'){
+        // 연차: 점 1개 (연차색)
+        const dot=document.createElement('div'); dot.className='cdot annual';
+        e.appendChild(dot);
+      } else if(isHalfDay){
+        // 반차/반반차: 점 2개 (근무상태 + 휴가색)
+        const dotWrap=document.createElement('div');
+        dotWrap.style.cssText='display:flex;gap:2px;align-items:center;justify-content:center;';
+        const dot1=document.createElement('div'); dot1.className='cdot';
+        dot1.classList.add(r.netSec > tgt ? 'ot' : r.netSec >= tgt ? 'ok' : 'inc');
+        const dot2=document.createElement('div'); dot2.className='cdot';
+        if(r.leaveType==='half_am') dot2.classList.add('half-am');
+        else if(r.leaveType==='half_pm') dot2.classList.add('half-pm');
+        else if(r.leaveType==='quarter') dot2.classList.add('quarter');
+        else if(r.leaveType==='half_q')  dot2.classList.add('half-q');
+        dotWrap.appendChild(dot1); dotWrap.appendChild(dot2);
+        e.appendChild(dotWrap);
+      } else {
+        // 일반: 점 1개 (초과/완료/미달)
+        const dot=document.createElement('div'); dot.className='cdot';
+        dot.classList.add(r.netSec > tgt ? 'ot' : r.netSec >= tgt ? 'ok' : 'inc');
+        e.appendChild(dot);
+      }
+      const cfg=LCFG[r.leaveType||'work'];
+      e.title=r.isLeave?((cfg&&cfg.label)||'휴가'):hms(r.netSec)+' 근무';
+      e.onclick=()=>{sw('history');setTimeout(()=>{const el=document.getElementById('hr-'+ds);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},80);};
+    }
+    grid.appendChild(e);
+  }
+  updateLeaveCard();
+}
+function calMove(d){ calM+=d; if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;} renderCal(); }
+
+
+// ─────────────────────────────────────────────────────────
+//  HISTORY
+// ─────────────────────────────────────────────────────────
+function renderHist(){
+  const now = new Date();
+  if(histY===null && histM===null){ histY=now.getFullYear(); histM=now.getMonth(); }
+
+  const titleEl  = document.getElementById('histMonthTitle');
+  const allBtn   = document.getElementById('histAllBtn');
+  const rangeBtn = document.getElementById('histRangeBtn');
+  const isAll    = (histY==='all');
+  const isRange  = (histY==='range');
+
+  // 버튼 스타일 초기화
+  allBtn.classList.remove('cnav-active');
+  rangeBtn.classList.remove('cnav-active');
+
+  // 내보내기 버튼 라벨
+  var exportLabel = document.getElementById('exportBtnLabel');
+  if(isAll)        { exportLabel.textContent='전체'; }
+  else if(isRange) { exportLabel.textContent=histRangeStart+'~'+histRangeEnd; }
+  else             { exportLabel.textContent=histY+'년 '+(histM+1)+'월'; }
+
+  if(isAll){
+    titleEl.textContent='전체 기록 ▾';
+    allBtn.classList.add('cnav-active');
+  } else if(isRange){
+    var s=histRangeStart, e=histRangeEnd;
+    titleEl.textContent=s.slice(5).replace('-','/')+'~'+e.slice(5).replace('-','/') + ' ▾';
+    rangeBtn.classList.add('cnav-active');
+  } else {
+    titleEl.textContent=histY+'년 '+(histM+1)+'월 ▾';
+  }
+
+  const wrap = document.getElementById('hlist');
+  let allEntries = Object.entries(S.records).sort(([a],[b])=>b.localeCompare(a));
+  const filtered = isAll   ? allEntries
+    : isRange ? allEntries.filter(([date])=> date>=histRangeStart && date<=histRangeEnd)
+    : allEntries.filter(([date])=>{
+        const[y,m]=date.split('-').map(Number);
+        return y===histY && m===(histM+1);
+      });
+
+  // 미니 요약 (전체보기가 아닐 때)
+  const summEl = document.getElementById('histMiniSummary');
+  if(!isAll && filtered.length>0){
+    const recs = filtered.map(([,v])=>v);
+    const tn  = recs.reduce((a,r)=>a+r.netSec,0);
+    const otS  = recs.reduce((a,r)=>a+Math.max(0,r.netSec-TARGET),0);
+    const incS = recs.reduce((a,r)=>a+Math.max(0,TARGET-r.netSec),0);
+    const diff = otS - incS;
+    const diffTxt = diff===0 ? '±0'
+      : diff>0 ? '<span style="color:var(--red)">+'+hmShort(diff)+'</span>'
+      :          '<span style="color:var(--yellow)">-'+hmShort(-diff)+'</span>';
+    const lvCount = recs.reduce(function(a,r){
+      if(r.leaveType==='annual')  return a+1;
+      if(r.leaveType==='half_am'||r.leaveType==='half_pm') return a+0.5;
+      if(r.leaveType==='quarter') return a+0.25;
+      if(r.leaveType==='half_q')  return a+0.75;
+      return a;
+    },0);
+    const lvTxt = lvCount>0 ? lvCount+'일' : '—';
+    summEl.innerHTML='<div style="display:flex;gap:8px;margin-bottom:12px;">'+
+      '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
+        '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">총근무</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;">'+hm(tn)+'</div>'+
+      '</div>'+
+      '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
+        '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">초과/미달</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;">'+diffTxt+'</div>'+
+      '</div>'+
+      '<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">'+
+        '<div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">휴가</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:var(--leave);">'+lvTxt+'</div>'+
+      '</div>'+
+    '</div>';
+  } else { summEl.innerHTML=''; }
+
+  if(!filtered.length){
+    var emptyMsg = isAll?'아직 근무 기록이 없습니다'
+      : isRange?'해당 기간에 기록이 없습니다'
+      : (histM+1)+'월 기록이 없습니다';
+    wrap.innerHTML='<div class="empty"><div class="empty-icon">📋</div>'+emptyMsg+'</div>';
+    return;
+  }
+
+  wrap.innerHTML=filtered.map(([date,r])=>{
+    const[,m,d]=date.split('-');
+    const annual=isAnnual(r.leaveType), cfg=LCFG[r.leaveType||'work'];
+    const ot=Math.max(0,r.netSec-TARGET);
+    const inc=Math.max(0,TARGET-r.netSec);
+    // 연차만 특별 표시, 나머지는 출퇴근 시간 표시
+    const timeRow = annual
+      ? ((cfg&&cfg.icon)||'')+" "+((cfg&&cfg.label)||'연차')+" · 8시간 인정"
+      : ((cfg&&cfg.icon)||'')+" "+((cfg&&cfg.label)||'일반')+" · 출근 <b>"+fts(r.checkIn)+"</b> · 퇴근 <b>"+fts(r.checkOut)+"</b>";
+    const otTxt = ot>0
+      ? '<span class="hot-txt"> +'+hmShort(ot)+'</span>'
+      : (inc>0 ? '<span style="color:var(--yellow);font-size:11px;"> -'+hmShort(inc)+'</span>' : '');
+    return '<div class="hitem" id="hr-'+date+'">'+
+      '<div class="hdate">'+m+'/'+d+'</div>'+
+      '<div class="hinfo">'+
+        '<div class="htimes">'+timeRow+'</div>'+
+        '<div class="hdur">'+hms(r.netSec)+otTxt+'</div>'+
+      '</div>'+
+      '<div class="hact-wrap">'+
+        '<button class="hact" onclick="openModal(\''+date+'\')" title="수정">✏️</button>'+
+        '<button class="hact del" onclick="delRecord(\''+date+'\')" title="삭제">🗑</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function histMonthMove(dir){
+  if(histY==='all'||histY==='range'){ histY=new Date().getFullYear(); histM=new Date().getMonth(); histRangeStart=null; histRangeEnd=null; return renderHist(); }
+  histM+=dir;
+  if(histM>11){histM=0;histY++;}
+  if(histM<0){histM=11;histY--;}
+  document.getElementById('monthPicker').style.display='none';
+  renderHist();
+}
+
+function histMonthAll(){
+  histY='all'; histM=null; histRangeStart=null; histRangeEnd=null;
+  document.getElementById('monthPicker').style.display='none';
+  document.getElementById('rangePicker').style.display='none';
+  renderHist();
+}
+
+// 날짜 범위 필터
+function openRangePicker(){
+  document.getElementById('monthPicker').style.display='none';
+  var rp = document.getElementById('rangePicker');
+  if(rp.style.display==='none'){
+    // select 옵션 채우기
+    var now=new Date(), curY=now.getFullYear();
+    var years=[curY-1,curY,curY+1];
+    ['rsY','reY'].forEach(function(id){
+      var sel=document.getElementById(id); sel.innerHTML='';
+      years.forEach(function(y){ sel.innerHTML+='<option value="'+y+'">'+y+'년</option>'; });
+    });
+    ['rsM','reM'].forEach(function(id){
+      var sel=document.getElementById(id); sel.innerHTML='';
+      for(var m=1;m<=12;m++) sel.innerHTML+='<option value="'+pad(m)+'">'+m+'월</option>';
+    });
+    function fillDays(id){ var sel=document.getElementById(id); sel.innerHTML=''; for(var d=1;d<=31;d++) sel.innerHTML+='<option value="'+pad(d)+'">'+d+'일</option>'; }
+    fillDays('rsD'); fillDays('reD');
+
+    // 기본값 설정
+    var sDate = histRangeStart || (curY+'-'+pad(now.getMonth()+1)+'-01');
+    var eDate = histRangeEnd   || (curY+'-'+pad(now.getMonth()+1)+'-'+pad(new Date(curY,now.getMonth()+1,0).getDate()));
+    var sp=sDate.split('-'), ep=eDate.split('-');
+    document.getElementById('rsY').value=sp[0];
+    document.getElementById('rsM').value=sp[1];
+    document.getElementById('rsD').value=sp[2];
+    document.getElementById('reY').value=ep[0];
+    document.getElementById('reM').value=ep[1];
+    document.getElementById('reD').value=ep[2];
+
+    rp.style.display='';
+  } else {
+    rp.style.display='none';
+  }
+}
+
+function closeRangePicker(){
+  document.getElementById('rangePicker').style.display='none';
+}
+
+function applyRange(){
+  var s = document.getElementById('rsY').value+'-'+document.getElementById('rsM').value+'-'+document.getElementById('rsD').value;
+  var e = document.getElementById('reY').value+'-'+document.getElementById('reM').value+'-'+document.getElementById('reD').value;
+  if(s>e){ toast('종료일이 시작일보다 빠릅니다'); return; }
+  histRangeStart=s; histRangeEnd=e;
+  histY='range'; histM=null;
+  document.getElementById('rangePicker').style.display='none';
+  renderHist();
+}
+
+var pickerTempY = null;
+function toggleMonthPicker(){
+  var picker = document.getElementById('monthPicker');
+  if(picker.style.display==='none'){
+    pickerTempY = (histY==='all'||histY===null) ? new Date().getFullYear() : histY;
+    renderPicker();
+    picker.style.display='';
+  } else {
+    picker.style.display='none';
+  }
+}
+
+function renderPicker(){
+  document.getElementById('pickerYearTitle').textContent = pickerTempY+'년';
+  var grid = document.getElementById('pickerMonthGrid');
+  var months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  grid.innerHTML = months.map(function(m, i){
+    var isActive = !!(histY!=='all' && histY===pickerTempY && histM===i);
+    return '<button onclick="selectPickerMonth('+i+')" style="'+
+      'padding:8px 2px;border-radius:8px;border:1px solid '+(isActive?'var(--accent)':'var(--border)')+';'+
+      'background:'+(isActive?'rgba(91,82,240,.15)':'var(--surface2)')+';'+
+      'color:'+(isActive?'var(--accent)':'var(--text2)')+';'+
+      'font-family:\'Noto Sans KR\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">'+m+'</button>';
+  }).join('');
+}
+
+function pickerYearMove(dir){
+  pickerTempY += dir;
+  renderPicker();
+}
+
+function selectPickerMonth(m){
+  histY = pickerTempY;
+  histM = m;
+  document.getElementById('monthPicker').style.display='none';
+  renderHist();
+}
+
+function delRecord(key){
+  delete S.records[key];
+  if(key===todayKey()){S.status='off';S.checkIn=null;S.checkOut=null;S.leaveType='work';}
+  save(); toast('🗑 기록 삭제 완료'); renderHist();
+  if(document.getElementById('tab-calendar').classList.contains('active'))renderCal();
+  if(key===todayKey())render();
+}
+
+// ─────────────────────────────────────────────────────────
+//  MODAL
+// ─────────────────────────────────────────────────────────
+function openModal(editKey){
+  mEditKey=editKey||null;
+  const isEdit=!!mEditKey;
+  document.getElementById('mTitle').textContent=isEdit?'기록 수정':'기록 추가 / 휴가 등록';
+  document.getElementById('overlay').classList.add('show');
+
+  // Date
+  const dateEl=document.getElementById('mDate');
+  dateEl.value=isEdit?mEditKey:todayKey();
+  dateEl.disabled=isEdit; // 수정 시 날짜 잠금 (날짜 바꾸려면 삭제 후 재등록)
+
+  // Reset chips & fields
+  const initType=isEdit?((S.records[mEditKey]&&S.records[mEditKey].leaveType)||'work'):'work';
+  selType(initType);
+
+  if(isEdit){
+    const r = S.records[mEditKey];
+    if(r){
+      // 출퇴근 시간 복원 (연차 제외)
+      if(!isAnnual(r.leaveType||'work')){
+        if(r.checkIn){ const ci=new Date(r.checkIn); document.getElementById('mIn').value=pad(ci.getHours())+':'+pad(ci.getMinutes()); }
+        else document.getElementById('mIn').value='';
+        if(r.checkOut){ const co=new Date(r.checkOut); document.getElementById('mOut').value=pad(co.getHours())+':'+pad(co.getMinutes()); }
+        else document.getElementById('mOut').value='';
+      }
+      document.getElementById('mNet').value='';
+    }
+    document.getElementById('mBtnDel').style.display='';
+  } else {
+    document.getElementById('mIn').value='';
+    document.getElementById('mOut').value='';
+    document.getElementById('mNet').value='';
+    document.getElementById('mBtnDel').style.display='none';
+  }
+}
+
+function selType(type){
+  mCurType = type;
+  const lv = isLeave(type);
+  const annual = isAnnual(type);
+
+  // 칩 하이라이트 — 모두 초기화 후 선택
+  document.querySelectorAll('.chip').forEach(function(c){
+    c.classList.remove('sel','lv-sel');
+  });
+  var chip = document.getElementById('ch-'+type);
+  if(chip) chip.classList.add(lv ? 'lv-sel' : 'sel');
+
+  // 출퇴근 필드: 연차만 숨김, 나머지 모두 표시
+  document.getElementById('mWorkFields').style.display = annual ? 'none' : '';
+
+  // 순근무 직접입력: 휴가 유형이면 숨김 (자동계산)
+  var netField = document.getElementById('mNetField');
+  if(netField) netField.style.display = (lv && !annual) ? 'none' : '';
+
+  // 인포박스
+  if(lv){
+    var cfg = LCFG[type];
+    var fixedLabel =
+        type==='annual'  ? '연차 — 8시간 자동 인정'
+      : type==='half_am' ? '오전 반차 — 점심없이 실근무 4h + 4h = 8h'
+      : type==='half_pm' ? '오후 반차 — 점심없이 실근무 4h + 4h = 8h'
+      : type==='quarter' ? '반반차 — 점심 1h 차감 후 실근무 6h + 2h = 8h'
+      : type==='half_q'  ? '반차+반반차 — 점심없이 실근무 2h + 6h = 8h'
+      : '';
+    document.getElementById('mLeaveInfoBox').innerHTML =
+      '<div class="lv-infobox-row">' +
+        '<div class="lv-infobox-key">' + (cfg?cfg.icon:'') + ' ' + fixedLabel + '</div>' +
+        (annual ? '<div class="lv-infobox-val">8시간</div>' : '') +
+      '</div>';
+    document.getElementById('mLeaveInfo').style.display = '';
+  } else {
+    document.getElementById('mLeaveInfo').style.display = 'none';
+  }
+}
+
+function saveModal(){
+  const dk = document.getElementById('mDate').value;
+  if(!dk){ toast('날짜를 선택해주세요'); return; }
+  const type = mCurType || 'work';
+  const annual = isAnnual(type);
+  const lv = isLeave(type);
+  const cfg = LCFG[type];
+  let rec;
+
+  if(annual){
+    // 연차: 고정 8h, 출퇴근 없음
+    rec = {leaveType:type, netSec:cfg.netSec, checkIn:null, checkOut:null, isLeave:true};
+  } else {
+    // 일반 / 반차 / 반반차: 출퇴근 시간 입력
+    const inV   = document.getElementById('mIn').value;
+    const outV  = document.getElementById('mOut').value;
+    const netStr= document.getElementById('mNet').value;
+    let ci=null, co=null;
+    if(inV){ const[h,m]=inV.split(':').map(Number); const d=new Date(dk); d.setHours(h,m,0,0); ci=d.getTime(); }
+    if(outV){ const[h,m]=outV.split(':').map(Number); const d=new Date(dk); d.setHours(h,m,0,0); co=d.getTime(); }
+
+    let ns = null;
+    if(ci && co && co <= ci){ toast('퇴근 시간이 출근 시간보다 빠릅니다'); return; }
+    if(lv){
+      if(ci && co){
+        const raw = Math.max(0, Math.floor((co-ci)/1000));
+        const noLunch = (type==='half_am'||type==='half_pm'||type==='half_q');
+        const worked = Math.max(0, raw - (noLunch ? 0 : LUNCH));
+        ns = worked + (cfg.fixedSec||0);
+      } else if(ci||co){
+        toast('출근/퇴근 시간을 모두 입력해주세요'); return;
+      } else {
+        ns = cfg.fixedSec||0;
+      }
+    } else {
+      ns = parseNetStr(netStr);
+      if(ns===null && ci && co) ns = Math.max(0, Math.floor((co-ci)/1000) - LUNCH);
+      if(ns===null){ toast('출근/퇴근 시간 또는 순 근무시간을 입력해주세요'); return; }
+    }
+
+    rec = {leaveType:type, checkIn:ci, checkOut:co, netSec:ns, isLeave:lv};
+  }
+
+  S.records[dk]=rec;
+  if(dk===todayKey()){
+    S.leaveType=type;
+    if(isAnnual(type)){
+      S.status='done'; S.checkIn=null; S.checkOut=null;
+    } else if(rec.checkIn){
+      S.checkIn=rec.checkIn; S.checkOut=rec.checkOut; S.status='done';
+    } else if(isLeave(type)){
+      S.status='done'; S.checkIn=null; S.checkOut=null;
+    }
+  }
+  save();
+  toast(mEditKey?'✅ 기록 수정 완료':'✅ 기록 추가 완료');
+  closeModal();
+  renderHist();
+  if(dk===todayKey())render();
+  if(document.getElementById('tab-calendar').classList.contains('active'))renderCal();
+}
+
+// ─────────────────────────────────────────────────────────
+//  EXPORT
+// ─────────────────────────────────────────────────────────
+function xlsEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function xlsCell(v, isNum){
+  if(isNum) return '<Cell><Data ss:Type="Number">'+v+'</Data></Cell>';
+  return '<Cell><Data ss:Type="String">'+xlsEsc(v)+'</Data></Cell>';
+}
+function xlsHCell(v){
+  return '<Cell ss:StyleID="H"><Data ss:Type="String">'+xlsEsc(v)+'</Data></Cell>';
+}
+
+function exportXLSX(){
+  var isAll = (histY==='all' || histY===null);
+  var allEntries = Object.entries(S.records).sort(function(a,b){ return a[0].localeCompare(b[0]); });
+  var filtered = isAll ? allEntries : allEntries.filter(function(e){
+    var parts = e[0].split('-').map(Number);
+    return parts[0]===histY && parts[1]===(histM+1);
+  });
+  if(!filtered.length){ toast('내보낼 기록이 없습니다'); return; }
+
+  var label    = isAll ? '전체' : histY+'년_'+(histM+1)+'월';
+  var filename = '근무기록_'+label+'.csv';
+
+  // 초 → "Xh Ym" 형식
+  function secToHM(s){
+    s = Math.max(0, s);
+    var h = Math.floor(s/3600);
+    var m = Math.floor((s%3600)/60);
+    if(h>0 && m>0) return h+'시간 '+m+'분';
+    if(h>0) return h+'시간';
+    if(m>0) return m+'분';
+    return '0분';
+  }
+
+  var csv = '\uFEFF';
+  csv += '날짜,근무유형,출근시간,퇴근시간,순근무,초과근무,비고\n';
+  filtered.forEach(function(e){
+    var date=e[0], r=e[1];
+    var cfg  = LCFG[r.leaveType||'work'];
+    var inT  = r.checkIn  ? fts(r.checkIn)  : '';
+    var outT = r.checkOut ? fts(r.checkOut) : '';
+    var netHM = secToHM(r.netSec);
+    var otSec = Math.max(0, r.netSec-TARGET);
+    var otHM  = otSec>0 ? secToHM(otSec) : '';
+    var type = (cfg&&cfg.label)||'일반 근무';
+    var note = r.isLeave ? type : '';
+    csv += [date,type,inT,outT,netHM,otHM,note].join(',') + '\n';
+  });
+
+  // 월별 요약
+  var months = {};
+  filtered.forEach(function(e){
+    var ym=e[0].slice(0,7), r=e[1];
+    if(!months[ym]) months[ym]={days:0,netSec:0,otSec:0};
+    months[ym].days++;
+    months[ym].netSec += r.netSec;
+    months[ym].otSec  += Math.max(0,r.netSec-TARGET);
+  });
+  csv += '\n월별 요약\n날짜,근무일수,총근무,총초과\n';
+  Object.entries(months).forEach(function(e){
+    var ym=e[0], m=e[1];
+    csv += [ym, m.days+'일', secToHM(m.netSec), m.otSec>0?secToHM(m.otSec):''].join(',') + '\n';
+  });
+
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename.replace('.xls','.csv');
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
+  toast('📊 '+label+' CSV 다운로드 완료!');
+}
+
+function exportCSVShare(filtered, label){
+  // iOS 폴백: CSV를 공유 시트로
+  var header = '날짜,근무유형,출근시간,퇴근시간,순근무(시간),초과근무(시간)';
+  var rows = filtered.map(function(e){
+    var date=e[0], r=e[1];
+    var cfg = LCFG[r.leaveType||'work'];
+    return [date,(cfg&&cfg.label)||'일반 근무',
+      r.checkIn?fts(r.checkIn):'', r.checkOut?fts(r.checkOut):'',
+      (r.netSec/3600).toFixed(2),
+      (Math.max(0,r.netSec-TARGET)/3600).toFixed(2)].join(',');
+  });
+  var csv = '\uFEFF'+header+'\n'+rows.join('\n');
+  var csvBlob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  var csvFile = new File([csvBlob], '근무기록_'+label+'.csv', {type:'text/csv'});
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[csvFile]})){
+    navigator.share({files:[csvFile], title:'근무기록_'+label+'.csv'})
+      .then(function(){ toast('📄 CSV 공유 완료!'); })
+      .catch(function(){});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(csv).then(function(){
+      toast('📋 클립보드 복사 완료! 메모앱에 붙여넣기하세요');
+    });
+  } else {
+    toast('PC에서 다운로드해 주세요');
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+//  연차 설정
+// ─────────────────────────────────────────────────────────
+function calcLeaveCount(records){
+  return Object.values(records).reduce(function(a,r){
+    if(r.leaveType==='annual')  return a+1;
+    if(r.leaveType==='half_am'||r.leaveType==='half_pm') return a+0.5;
+    if(r.leaveType==='quarter') return a+0.25;
+    if(r.leaveType==='half_q')  return a+0.75;
+    return a;
+  },0);
+}
+
+function updateLeaveCard(){
+  if(!document.getElementById('leaveRemain')) return;
+  var total = S.totalLeave || 0;
+  var used  = calcLeaveCount(S.records);
+  var remain = Math.round((total - used) * 100) / 100;
+  document.getElementById('leaveRemain').textContent = remain;
+  document.getElementById('leaveRemain').style.color = remain<=0?'var(--red)':remain<=3?'var(--yellow)':'var(--accent)';
+  document.getElementById('leaveUsed').textContent = '(사용 '+used+'일 / 총 '+total+'일)';
+  var ltd = document.getElementById('lunchTimeDisplay');
+  if(ltd) ltd.textContent = (S.lunchStart||'12:00')+'~'+(S.lunchEnd||'13:00');
+}
+
+function openLeaveSettings(){
+  document.getElementById('totalLeaveInput').value = S.totalLeave || 15;
+  document.getElementById('lunchStartInput').value = S.lunchStart || '12:00';
+  document.getElementById('lunchEndInput').value   = S.lunchEnd   || '13:00';
+  document.getElementById('leaveOverlay').classList.add('show');
+}
+
+function closeLeaveSettings(){
+  document.getElementById('leaveOverlay').classList.remove('show');
+}
+
+function saveLeaveSettings(){
+  var val = parseFloat(document.getElementById('totalLeaveInput').value);
+  if(isNaN(val)||val<0){ toast('올바른 숫자를 입력해주세요'); return; }
+  var ls = document.getElementById('lunchStartInput').value;
+  var le = document.getElementById('lunchEndInput').value;
+  if(ls && le && ls>=le){ toast('점심 종료시간이 시작시간보다 빠릅니다'); return; }
+  S.totalLeave = val;
+  if(ls) S.lunchStart = ls;
+  if(le) S.lunchEnd   = le;
+  save();
+  closeLeaveSettings();
+  updateLeaveCard();
+  // 점심 설정 변경 시 lunchNote 업데이트
+  var ln = document.getElementById('lunchNote');
+  if(ln) ln.innerHTML='🍱 점심시간 <strong style="margin:0 4px">'+(S.lunchStart||'12:00')+'~'+(S.lunchEnd||'13:00')+'</strong> 자동 차감';
+  toast('✅ 설정 저장 완료');
+}
+
+function leaveOverlayClick(e){
+  if(e.target===document.getElementById('leaveOverlay')) closeLeaveSettings();
+}
+
+function modalDelete(){
+  if(!mEditKey) return;
+  const key = mEditKey;
+  closeModal();
+  delRecord(key);
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('show');
+}
+function overlayClick(e){
+  if(e.target===document.getElementById('overlay'))closeModal();
+}
+
+// ─────────────────────────────────────────────────────────
+//  TOAST
+// ─────────────────────────────────────────────────────────
+function toast(msg){
+  const w=document.getElementById('twrap'),e=document.createElement('div');
+  e.className='toast';e.textContent=msg;w.appendChild(e);
+  setTimeout(()=>e.remove(),2200);
+}
+
+// 기존 half 데이터 → half_am 마이그레이션
+// 반차/반반차 데이터에 fixedSec이 누락된 경우 보정
+(function(){
+  var changed = false;
+  if(S.totalLeave===undefined){ S.totalLeave=15; changed=true; }
+  if(!S.lunchStart){ S.lunchStart='12:00'; changed=true; }
+  if(!S.lunchEnd)  { S.lunchEnd='13:00';   changed=true; }
+  Object.entries(S.records).forEach(function(e){
+    var r=e[1];
+    if(r.leaveType==='half'){ r.leaveType='half_am'; changed=true; }
+    var cfg = LCFG[r.leaveType];
+    if(cfg && cfg.fixedSec>0 && !isAnnual(r.leaveType) && r.checkIn && r.checkOut){
+      // calcNet으로 올바른 값 재계산
+      var correct = calcNet(r.checkIn, r.checkOut, r.leaveType);
+      if(r.netSec !== correct){ r.netSec=correct; changed=true; }
+    }
+  });
+  if(changed) save();
+})();
+
+// ─────────────────────────────────────────────────────────
+//  DAY GUARD  (날짜 바뀌면 상태 리셋)
+// ─────────────────────────────────────────────────────────
+(function(){
+  function resetToday(){
+    S.status='off'; S.checkIn=null; S.checkOut=null; S.leaveType='work'; save();
+  }
+
+  if(S.checkIn || S.status==='done'){
+    const refTs = S.checkIn || (S.checkOut);
+    if(refTs){
+      const refDate = new Date(refTs);
+      const now = new Date();
+      const sameDay =
+        refDate.getFullYear()===now.getFullYear() &&
+        refDate.getMonth()===now.getMonth() &&
+        refDate.getDate()===now.getDate();
+
+      if(!sameDay){
+        // 미퇴근 상태로 날짜 바뀐 경우 → 23:59:59로 자동 기록
+        if(S.status==='working' && S.checkIn){
+          const eod=new Date(refDate); eod.setHours(23,59,59,0);
+          const n=calcNet(S.checkIn,eod.getTime(),'work');
+          const ds=`${refDate.getFullYear()}-${pad(refDate.getMonth()+1)}-${pad(refDate.getDate())}`;
+          if(!S.records[ds]) S.records[ds]={checkIn:S.checkIn,checkOut:eod.getTime(),leaveType:'work',netSec:n,isLeave:false};
+        }
+        resetToday();
+      }
+    } else {
+      // checkIn도 없고 done인 이상한 상태 → 리셋
+      if(S.status==='done') resetToday();
+    }
+  }
+
+  // 자정 넘어가면 자동 리셋 (앱 켜놓은 채로 날짜 바뀔 때)
+  function scheduleReset(){
+    const now=new Date();
+    const msUntilMidnight=(new Date(now.getFullYear(),now.getMonth(),now.getDate()+1))-now+500;
+    setTimeout(function(){
+      // 미퇴근 상태면 자동 기록
+      if(S.status==='working'&&S.checkIn){
+        const ci=new Date(S.checkIn);
+        const eod=new Date(ci);eod.setHours(23,59,59,0);
+        const n=calcNet(S.checkIn,eod.getTime(),'work');
+        const ds=`${ci.getFullYear()}-${pad(ci.getMonth()+1)}-${pad(ci.getDate())}`;
+        if(!S.records[ds]) S.records[ds]={checkIn:S.checkIn,checkOut:eod.getTime(),leaveType:'work',netSec:n,isLeave:false};
+      }
+      resetToday();
+      render();
+      scheduleReset();
+    }, msUntilMidnight);
+  }
+  scheduleReset();
+})();
+
+render();
+setInterval(()=>{
+  const n=new Date(),days=['일','월','화','수','목','금','토'];
+  document.getElementById('hdrDate').textContent=`${n.getMonth()+1}/${n.getDate()} (${days[n.getDay()]})`;
+},60000);
+
+// iOS 홈 화면 추가 안내
+(function(){
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed = localStorage.getItem('pwa_dismissed');
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if(isIOS && !isStandalone && !dismissed){
+    setTimeout(()=>{ document.getElementById('pwaBanner').style.display='flex'; }, 1500);
+  }
+})();
+
+function dismissPWA(){
+  document.getElementById('pwaBanner').style.display='none';
+  localStorage.setItem('pwa_dismissed','1');
+}
+
+// Service Worker 등록 (자동 업데이트)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').then(function(reg){
+      // 새 버전 감지 시 자동 업데이트
+      reg.addEventListener('updatefound', function(){
+        var newWorker = reg.installing;
+        newWorker.addEventListener('statechange', function(){
+          if(newWorker.state==='installed' && navigator.serviceWorker.controller){
+            toast('🔄 새 버전이 있어요! 앱을 껐다 켜주세요');
+          }
+        });
+      });
+    });
+  });
+}
+</script>
+</body>
+</html>
